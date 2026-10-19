@@ -1,0 +1,25 @@
+# Runtime state & secrets — never commit
+config.json
+dns_cache.json
+usage.json
+*.log
+warp_wg.conf
+
+# Build outputs
+/dist/
+*.exe
+*.zip
+gsb-gateway/control/bin/
+gsb-gateway/relay/bin/
+gsb-gateway/core/target/
+*.syso
+
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/
+
+# Keep the committed empty placeholder (build.ps1 fills it locally)
+!gsb-gateway/control/embedded/gsb-core.exe

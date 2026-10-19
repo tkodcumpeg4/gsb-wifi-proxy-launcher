@@ -1,0 +1,1526 @@
+<!doctype html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GSB Proxy Kontrol Paneli</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --bg-card: #111620;
+      --bg-elevated: #161c28;
+      --bg-input: #0d1119;
+
+      --accent: #10b981;
+      --accent-bg: rgba(16, 185, 129, 0.1);
+      --accent-border: rgba(16, 185, 129, 0.25);
+
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.1);
+      --amber-border: rgba(245, 158, 11, 0.25);
+
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --danger-border: rgba(239, 68, 68, 0.25);
+
+      --info: #38bdf8;
+      --info-bg: rgba(56, 189, 248, 0.1);
+      --info-border: rgba(56, 189, 248, 0.25);
+
+      --fg: #f1f5f9;
+      --fg-secondary: #94a3b8;
+      --fg-muted: #64748b;
+
+      --border: #1e2636;
+      --border-light: #2a3448;
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+
+      --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    .container {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Header */
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 60px;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+      color: var(--fg);
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .brand-sub {
+      color: var(--fg-muted);
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      border-left: 1px solid var(--border-light);
+      padding-left: 12px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Plain Flat Badges */
+    .out-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 500;
+      white-space: nowrap;
+      border: 1px solid var(--border-light);
+      background: var(--bg-elevated);
+      color: var(--fg-secondary);
+    }
+
+    .out-badge.ok {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    .out-badge.warn {
+      background: var(--amber-bg);
+      border-color: var(--amber-border);
+      color: var(--amber);
+    }
+
+    .out-badge.err {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger);
+    }
+
+    .out-badge.info {
+      background: var(--info-bg);
+      border-color: var(--info-border);
+      color: var(--info);
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    /* Plain Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.83rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border-light);
+      font-family: var(--font-sans);
+      color: var(--fg);
+      background: var(--bg-elevated);
+      white-space: nowrap;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: #1f2737;
+      border-color: #38455e;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #06130e;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #0ea572;
+      border-color: #0ea572;
+      color: #06130e;
+    }
+
+    .btn-danger {
+      background: var(--danger-bg);
+      color: #f87171;
+      border-color: var(--danger-border);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.76rem;
+    }
+
+    .btn-sm svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    /* 4-Stage Pipeline Grid */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .pipeline-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 580px) {
+      .pipeline-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .bento-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+    }
+
+    .bento-card.state-ok {
+      border-color: var(--accent-border);
+    }
+
+    .bento-card.state-warn {
+      border-color: var(--amber-border);
+    }
+
+    .bento-card.state-err {
+      border-color: var(--danger-border);
+    }
+
+    .pipe-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .card-icon-sm {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-light);
+      color: var(--fg-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-icon-sm svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .pipe-label {
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+      margin-bottom: 2px;
+    }
+
+    .pipe-value {
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: var(--fg);
+      word-break: break-all;
+      margin-bottom: 2px;
+    }
+
+    .pipe-meta {
+      font-size: 0.78rem;
+      color: var(--fg-secondary);
+    }
+
+    /* Main 2-Column Workspace */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 960px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-head-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.94rem;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .card-head-title svg {
+      width: 17px;
+      height: 17px;
+      color: var(--fg-secondary);
+    }
+
+    /* Form Controls */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 580px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .input-group label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      color: var(--fg-secondary);
+      margin-bottom: 5px;
+    }
+
+    .input-field {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-light);
+      color: var(--fg);
+      padding: 8px 11px;
+      border-radius: var(--radius-sm);
+      font-size: 0.86rem;
+      font-family: var(--font-mono);
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+    }
+
+    /* Terminal Log Box */
+    .cli-showcase {
+      margin-top: 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .terminal-header {
+      background: var(--bg-elevated);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--fg-secondary);
+    }
+
+    .terminal-body {
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #cbd5e1;
+      max-height: 165px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+
+    /* Switch Rows */
+    .benefit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .benefit-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .benefit-ico {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-elevated);
+      color: var(--fg-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .benefit-ico svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .benefit-text h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .benefit-text p {
+      font-size: 0.75rem;
+      color: var(--fg-secondary);
+    }
+
+    /* Toggle Switch */
+    .zv-switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    .zv-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .zv-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #1e2636;
+      border: 1px solid var(--border-light);
+      transition: 0.15s;
+      border-radius: 999px;
+    }
+
+    .zv-slider::before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #94a3b8;
+      transition: 0.15s;
+      border-radius: 50%;
+    }
+
+    .zv-switch input:checked + .zv-slider {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .zv-switch input:checked + .zv-slider::before {
+      transform: translateX(18px);
+      background-color: #06130e;
+    }
+
+    /* Telemetry Counters */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .telemetry-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .telemetry-val {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .telemetry-lbl {
+      font-size: 0.7rem;
+      color: var(--fg-muted);
+    }
+
+    /* Proxy Table Card */
+    .inspector-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .inspector-topbar {
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .inspector-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    .inspector-title svg {
+      color: var(--fg-secondary);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      max-height: 440px;
+      overflow-y: auto;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .compare-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--bg-elevated);
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      color: var(--fg-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .compare-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.83rem;
+      color: var(--fg-secondary);
+      vertical-align: middle;
+    }
+
+    .compare-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .compare-table tr.active-row td {
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .compare-table tr.active-row td:first-child {
+      border-left: 2px solid var(--accent);
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+    }
+      .relay-box { margin-top: 14px; border-top: 1px solid var(--border, rgba(127,127,127,.25)); padding-top: 12px; }
+    .relay-box summary { cursor: pointer; font-weight: 500; }
+    .relay-box p { margin: 8px 0 12px; }
+    .disclaimer { max-width: 1280px; margin: 18px auto 28px; padding: 14px 18px; font-size: 0.78rem; line-height: 1.55;
+      color: var(--fg-muted); background: color-mix(in srgb, var(--warn, #d9a441) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--warn, #d9a441) 35%, transparent); border-radius: 10px; }
+    .disclaimer strong { color: var(--fg); }
+    .btn-icon { padding: 8px; }
+    .btn-icon svg { width: 20px; height: 20px; }
+    .intro-overlay { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.62); backdrop-filter: blur(4px); padding: 20px; }
+    .intro-overlay.show { display: flex; }
+    .intro-card { max-width: 560px; width: 100%; background: var(--bg-card, #15181d); border: 1px solid var(--border, rgba(127,127,127,.25));
+      border-radius: 16px; padding: 24px 26px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+    .intro-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .intro-head h2 { margin: 0; font-size: 1.25rem; }
+    .intro-ico { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px;
+      color: var(--accent, #14b8a6); background: color-mix(in srgb, var(--accent, #14b8a6) 14%, transparent); }
+    .intro-ico svg { width: 22px; height: 22px; }
+    .intro-purpose { font-size: .92rem; line-height: 1.6; margin: 0 0 14px; color: var(--fg); }
+    .intro-disc { font-size: .8rem; line-height: 1.55; color: var(--fg-muted); padding: 12px 14px; border-radius: 10px;
+      background: color-mix(in srgb, var(--warn, #d9a441) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--warn, #d9a441) 35%, transparent); margin-bottom: 18px; }
+    .intro-disc strong, .intro-purpose strong { color: var(--fg); }
+    .intro-card .btn-primary { width: 100%; justify-content: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav-inner">
+      <div class="brand-wrap">
+        <a class="brand" href="#">
+          <span class="card-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9c-4.6-1-8-4.5-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <span>GSB Proxy</span>
+        </a>
+        <span class="brand-sub">127.0.0.1:8880</span>
+        <span id="sysProxyBadge" class="out-badge info">
+          <span class="live-dot"></span>
+          <span>Sistem Proxy</span>
+        </span>
+        <span id="tunBadge" class="out-badge info">
+          <span class="live-dot"></span>
+          <span>TUN</span>
+        </span>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-primary" onclick="runSpeedTest()" id="btnSpeedTest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span>Hız Testi</span>
+        </button>
+        <button class="btn" onclick="run8888Test()" id="btnTest8888">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>8.8.8.8 Testi</span>
+        </button>
+        <button class="btn" onclick="scanAllProxies()" id="btnScanAll">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span>Listeyi Tara</span>
+        </button>
+        <a class="btn btn-icon" id="btnGithub" href="#" onclick="openExternal('https://github.com/tkodcumpeg4'); return false;" title="GitHub: tkodcumpeg4">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Purpose + disclaimer, shown on every launch -->
+  <div id="introOverlay" class="intro-overlay">
+    <div class="intro-card">
+      <div class="intro-head">
+        <span class="intro-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9c-4.6-1-8-4.5-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        </span>
+        <h2>GSB Wi-Fi Proxy Launcher</h2>
+      </div>
+      <p class="intro-purpose">
+        Bu araç; GSB/KYK Wi-Fi ağında, kullanıcının <strong>kendi</strong> üniversite proxy hesabı ve
+        <strong>kendi</strong> sunucusuyla tüm sistem trafiğini (TCP, DNS ve röle üzerinden UDP) güvenli
+        bir tünelden geçirmek için kişisel bir araçtır. Sanal bir ağ bağdaştırıcısı (GSB-TUN) oluşturur.
+      </p>
+      <div class="intro-disc">
+        <strong>Sorumluluk Reddi.</strong> Ağ filtrelerini/kısıtlamalarını atlatmak, DPI'ı aşmak veya
+        trafiği gizlemek ilgili kurumun ağ kullanım politikasına (AUP) aykırı olabilir ve hesabın askıya
+        alınması dâhil disiplin sonuçları doğurabilir. Spoofing/tünelleme özelliklerini kullanmak tamamen
+        kullanıcının inisiyatifindedir; doğacak her türlü sorumluluk kullanıcıya aittir. Başkasına ait
+        hesapları veya izinsiz erişimi kapsamaz.
+      </div>
+      <button class="btn btn-primary" onclick="document.getElementById('introOverlay').classList.remove('show')">
+        <span>Anladım, devam et</span>
+      </button>
+    </div>
+  </div>
+
+  <main class="container">
+    <!-- 4-Stage Pipeline Cards -->
+    <div class="pipeline-grid">
+      <!-- 1. GSB Wi-Fi -->
+      <article class="bento-card" id="cardWifi">
+        <div class="pipe-top">
+          <span class="card-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg>
+          </span>
+          <span id="badgeWifi" class="out-badge info"><span class="live-dot"></span><span>...</span></span>
+        </div>
+        <div class="pipe-label">Wi-Fi</div>
+        <div class="pipe-value mono" id="wifiIp">Algılanıyor...</div>
+        <div class="pipe-meta" id="wifiDetail">Ağ Geçidi: -</div>
+      </article>
+
+      <!-- 2. Active Proxy -->
+      <article class="bento-card" id="cardProxy">
+        <div class="pipe-top">
+          <span class="card-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></svg>
+          </span>
+          <span id="badgeProxy" class="out-badge info"><span class="live-dot"></span><span>...</span></span>
+        </div>
+        <div class="pipe-label">Proxy Sunucusu</div>
+        <div class="pipe-value mono" id="proxyEndpoint">—</div>
+        <div class="pipe-meta" id="proxyUni">Proxy seçilmedi</div>
+      </article>
+
+      <!-- 3. WARP-Shield -->
+      <article class="bento-card" id="cardWarp">
+        <div class="pipe-top">
+          <span class="card-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9c-4.6-1-8-4.5-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <span id="badgeWarp" class="out-badge ok"><span class="live-dot"></span><span>Aktif</span></span>
+        </div>
+        <div class="pipe-label">Güvenli Tünel</div>
+        <div class="pipe-value" id="warpStatusText">WARP-Shield</div>
+        <div class="pipe-meta" id="warpSubText">Soket havuzu ve şifreli DNS</div>
+      </article>
+
+      <!-- 4. 8.8.8.8 -->
+      <article class="bento-card" id="card8888">
+        <div class="pipe-top">
+          <span class="card-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <span id="badge8888" class="out-badge warn"><span class="live-dot"></span><span>...</span></span>
+        </div>
+        <div class="pipe-label">8.8.8.8 Erişimi</div>
+        <div class="pipe-value" id="reach8888Main">Kontrol Ediliyor...</div>
+        <div class="pipe-meta" id="reach8888Sub">Doğrudan: -</div>
+      </article>
+    </div>
+
+    <!-- Main 2-Column Workspace -->
+    <div class="workspace-grid">
+      <!-- Left Card -->
+      <section class="bento-card">
+        <div class="card-head">
+          <div class="card-head-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+            <span>Proxy Giriş Bilgileri</span>
+          </div>
+          <span class="out-badge mono" id="activeProxyLabel">—</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="inpUser">Kullanıcı Adı</label>
+            <input type="text" class="input-field" id="inpUser" placeholder="Kullanıcı adınız" autocomplete="off" />
+          </div>
+          <div class="input-group">
+            <label for="inpPass">
+              <span>Parola</span>
+              <span id="passSavedHint" style="color:var(--accent);"></span>
+            </label>
+            <input type="password" class="input-field" id="inpPass" placeholder="Parola" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="nav-actions">
+          <button class="btn btn-primary" onclick="saveCredentialsAndTest()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Kaydet ve Bağlan</span>
+          </button>
+          <button id="btnSysProxy" class="btn" onclick="toggleSystemProxy()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="4" rx="2"/><path d="M2 20h20"/></svg>
+            <span id="btnSysProxyText">Sistem Proxy: Aç</span>
+          </button>
+          <button id="btnTun" class="btn" onclick="toggleTun()" title="Tüm uygulamaların TCP ve DNS trafiğini sanal ağ bağdaştırıcısı üzerinden proxy'ye yönlendirir">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 7V5"/><path d="M10 7V5"/><path d="M14 7V5"/><path d="M18 7V5"/></svg>
+            <span id="btnTunText">Sanal Adaptör: Aç</span>
+          </button>
+        </div>
+
+        <details class="relay-box" id="relayBox">
+          <summary>UDP Rölesi (isteğe bağlı) <span class="mono" id="relayState" style="color:var(--fg-muted);"></span></summary>
+          <p class="pipe-meta">UDP (sesli arama, oyun, QUIC) HTTP proxy'den geçemez. Kendi sunucunuzda <span class="mono">gsb-relay</span> çalıştırırsanız UDP trafiği proxy üzerinden ona taşınır. Sunucu 443 portunu kullanmalıdır.</p>
+          <div class="form-grid">
+            <div class="input-group">
+              <label for="inpRelayServer">Röle adresi (IP:443)</label>
+              <input type="text" class="input-field mono" id="inpRelayServer" placeholder="203.0.113.10:443" autocomplete="off" />
+            </div>
+            <div class="input-group">
+              <label for="inpRelayToken"><span>Token</span><span id="relayTokenHint" style="color:var(--accent);"></span></label>
+              <input type="password" class="input-field mono" id="inpRelayToken" placeholder="64 hex karakter" autocomplete="off" />
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="inpRelayFp">Sertifika SHA-256 parmak izi</label>
+            <input type="text" class="input-field mono" id="inpRelayFp" placeholder="gsb-relay açılışta yazdırır" autocomplete="off" />
+          </div>
+          <div class="nav-actions">
+            <button class="btn btn-sm" onclick="saveRelay()"><span>Kaydet</span></button>
+            <button class="btn btn-sm" onclick="testRelayNow()"><span>Röleyi Test Et</span></button>
+          </div>
+        </details>
+
+        <div class="cli-showcase">
+          <div class="terminal-header">
+            <span>Bağlantı Günlüğü</span>
+            <span id="exitIpLabel">Çıkış IP: -</span>
+          </div>
+          <div class="terminal-body" id="diagLogs">Hazır.</div>
+        </div>
+      </section>
+
+      <!-- Right Card -->
+      <section class="bento-card">
+        <div class="card-head">
+          <div class="card-head-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+            <span>Ağ Ayarları</span>
+          </div>
+          <span class="out-badge ok" id="warpModeBadge">
+            <span class="live-dot"></span>
+            <span>Aktif</span>
+          </span>
+        </div>
+
+        <div class="benefit-row">
+          <div class="benefit-left">
+            <span class="benefit-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9c-4.6-1-8-4.5-8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+            </span>
+            <div class="benefit-text">
+              <h4>WARP-Shield Soket Havuzu</h4>
+              <p>Ön-ısıtmalı TCP tünelleri ve Cloudflare 1.1.1.1 DoH katmanı.</p>
+            </div>
+          </div>
+          <label class="zv-switch">
+            <input type="checkbox" id="chkWarpShield" checked onchange="onToggleWarpShield()" />
+            <span class="zv-slider"></span>
+          </label>
+        </div>
+
+        <div class="benefit-row">
+          <div class="benefit-left">
+            <span class="benefit-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <div class="benefit-text">
+              <h4>TLS Maskeleme (Spoofing)</h4>
+              <p>ClientHello kaydını değiştirip DPI'ı atlatır ve başlık sızıntılarını (Via, X-Forwarded-For) gizler. Kapatırsan bazı siteler açılabilir ama maskeleme olmaz.</p>
+            </div>
+          </div>
+          <label class="zv-switch">
+            <input type="checkbox" id="chkTlsFrag" checked onchange="onToggleWarpShield()" />
+            <span class="zv-slider"></span>
+          </label>
+        </div>
+
+        <div class="benefit-row">
+          <div class="benefit-left">
+            <span class="benefit-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </span>
+            <div class="benefit-text">
+              <h4>IP Bağlantı Modu</h4>
+              <p>CONNECT isteğinde alan adı yerine IP gönderir; proxy loglarında site adını gizler (hedef IP yine görünür).</p>
+            </div>
+          </div>
+          <label class="zv-switch">
+            <input type="checkbox" id="chkIpConnect" onchange="onToggleWarpShield()" />
+            <span class="zv-slider"></span>
+          </label>
+        </div>
+
+        <div class="benefit-row">
+          <div class="benefit-left">
+            <span class="benefit-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg>
+            </span>
+            <div class="benefit-text">
+              <h4>Wi-Fi Adaptör Kilidi</h4>
+              <p>Trafiği doğrudan GSB Wi-Fi (<span class="mono" id="lblWifiIpInline">10.50.x.x</span>) üzerinden çıkarır.</p>
+            </div>
+          </div>
+          <label class="zv-switch">
+            <input type="checkbox" id="chkBindWifi" checked onchange="onToggleWifiBind()" />
+            <span class="zv-slider"></span>
+          </label>
+        </div>
+
+        <div class="benefit-row">
+          <div class="benefit-left">
+            <span class="benefit-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 11 4.5-3 8-6 8-11V5z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            </span>
+            <div class="benefit-text">
+              <h4>Trafiği TUN'a Zorla</h4>
+              <p>Sanal adaptör açıkken Windows'un Wi-Fi'ye düşmesini engeller (uplink metriği yükseltilir).</p>
+            </div>
+          </div>
+          <label class="zv-switch">
+            <input type="checkbox" id="chkForceTun" onchange="onToggleForceTun()" />
+            <span class="zv-slider"></span>
+          </label>
+        </div>
+
+        <div class="nav-actions" style="justify-content: space-between; margin-top: 10px;">
+          <button onclick="connectGsbWifi()" class="btn btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/></svg>
+            <span>GSBWIFI Bağlan</span>
+          </button>
+          <button onclick="toggleWireSock()" id="btnWireSock" class="btn btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+            <span id="btnWireSockText">WireSock: Başlat</span>
+          </button>
+        </div>
+
+        <div class="telemetry-grid">
+          <div class="telemetry-box">
+            <div class="telemetry-val" id="statPool">0</div>
+            <div class="telemetry-lbl">Hazır Soket</div>
+          </div>
+          <div class="telemetry-box">
+            <div class="telemetry-val" id="statAnon">0</div>
+            <div class="telemetry-lbl">İstek</div>
+          </div>
+          <div class="telemetry-box">
+            <div class="telemetry-val" id="statConn">0</div>
+            <div class="telemetry-lbl">Aktif Tünel</div>
+          </div>
+          <div class="telemetry-box">
+            <div class="telemetry-val" id="statBytes">0 MB</div>
+            <div class="telemetry-lbl">Oturum Verisi</div>
+          </div>
+          <div class="telemetry-box">
+            <div class="telemetry-val" id="statTotal">0 MB</div>
+            <div class="telemetry-lbl">Toplam Veri</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Proxy List -->
+    <section class="inspector-card">
+      <div class="inspector-topbar">
+        <div class="inspector-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></svg>
+          <span>Proxy Listesi</span>
+        </div>
+        <div class="nav-actions">
+          <input type="text" class="input-field" id="inpNewUni" placeholder="Kurum Adı" style="width:160px;padding:6px 10px;font-size:0.8rem;" />
+          <input type="text" class="input-field" id="inpNewHostPort" placeholder="IP:Port" style="width:165px;padding:6px 10px;font-size:0.8rem;" />
+          <button class="btn btn-primary btn-sm" onclick="addNewProxy()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+            <span>Ekle</span>
+          </button>
+          <input type="text" class="input-field" id="inpFilter" placeholder="Ara..." oninput="renderProxyTable()" style="width:150px;padding:6px 10px;font-size:0.8rem;" />
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Durum</th>
+              <th>Kurum</th>
+              <th>Adres</th>
+              <th>IP</th>
+              <th>Yanıt</th>
+              <th>Gecikme</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="proxyTableBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--fg-muted);">Yükleniyor...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="disclaimer">
+      <strong>Sorumluluk Reddi Beyanı.</strong>
+      Bu araç yalnızca kullanıcının <em>kendi</em> üniversite hesabı ve <em>kendi</em> sunucusuyla,
+      kişisel kullanım için sağlanmıştır. Ağ filtrelerini/kısıtlamalarını atlatmak, DPI'ı aşmak
+      veya trafiği gizlemek ilgili kurumun ağ kullanım politikasına (AUP) aykırı olabilir ve
+      hesabın askıya alınması dâhil disiplin sonuçları doğurabilir. Spoofing ve tünelleme
+      özelliklerini açmak tamamen kullanıcının inisiyatifindedir; doğacak her türlü sorumluluk
+      kullanıcıya aittir. Başkasına ait hesapları veya izinsiz erişimi kapsamaz.
+    </footer>
+  </main>
+
+  <script>
+    let latestState = null;
+    let userEditedInputs = false;
+
+    const SVG_CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    const SVG_KEY = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>';
+
+    document.getElementById('inpUser').addEventListener('input', () => { userEditedInputs = true; });
+    document.getElementById('inpPass').addEventListener('input', () => { userEditedInputs = true; });
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        latestState = data;
+        updateDashboard(data);
+      } catch (e) {
+        console.error('Status fetch error:', e);
+      }
+    }
+
+    // Show the purpose + disclaimer on every launch.
+    document.getElementById('introOverlay').classList.add('show');
+
+    // Open a link in the system default browser (the panel runs in an
+    // embedded webview, so normal links would stay inside it).
+    async function openExternal(url) {
+      try {
+        await fetch('/api/open', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+      } catch (e) { window.open(url, '_blank'); }
+    }
+
+    function fmtBytes(n) {
+      if (n >= 1024 * 1024 * 1024) return (n / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+      return (n / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function setBadge(el, type, text) {
+      el.className = `out-badge ${type}`;
+      el.innerHTML = `<span class="live-dot"></span><span>${text}</span>`;
+    }
+
+    function updateDashboard(data) {
+      const { wifi, config, sys_proxy, stats } = data;
+
+      // 1. Wi-Fi Card
+      const cardWifi = document.getElementById('cardWifi');
+      const badgeWifi = document.getElementById('badgeWifi');
+      if (wifi.connected) {
+        cardWifi.className = 'bento-card state-ok';
+        setBadge(badgeWifi, 'ok', 'Bağlı');
+        document.getElementById('wifiIp').textContent = wifi.ip;
+        document.getElementById('wifiDetail').textContent = `Ağ Geçidi: ${wifi.gateway || '-'}`;
+        document.getElementById('lblWifiIpInline').textContent = wifi.ip;
+      } else {
+        cardWifi.className = 'bento-card state-err';
+        setBadge(badgeWifi, 'err', 'Kopuk');
+        document.getElementById('wifiIp').textContent = 'Bağlı Değil';
+        document.getElementById('wifiDetail').textContent = 'GSBWIFI ağına bağlanın';
+      }
+
+      // 2. Active Proxy Card
+      const pCheck = stats.last_proxy_check || {};
+      const cardProxy = document.getElementById('cardProxy');
+      const badgeProxy = document.getElementById('badgeProxy');
+      document.getElementById('proxyEndpoint').textContent = `${config.active_proxy_host}:${config.active_proxy_port}`;
+      document.getElementById('proxyUni').textContent = config.active_proxy_uni;
+      document.getElementById('activeProxyLabel').textContent = `${config.active_proxy_host}:${config.active_proxy_port}`;
+
+      if (pCheck.status_code === 200) {
+        cardProxy.className = 'bento-card state-ok';
+        setBadge(badgeProxy, 'ok', 'Aktif');
+      } else if (pCheck.status_code === 407) {
+        cardProxy.className = 'bento-card state-warn';
+        setBadge(badgeProxy, 'warn', '407');
+      } else if (pCheck.tcp_ok) {
+        cardProxy.className = 'bento-card state-warn';
+        setBadge(badgeProxy, 'warn', `Kod ${pCheck.status_code}`);
+      } else {
+        cardProxy.className = 'bento-card state-err';
+        setBadge(badgeProxy, 'err', 'Kapalı');
+      }
+
+      // 3. WARP-Shield Card
+      const cardWarp = document.getElementById('cardWarp');
+      const badgeWarp = document.getElementById('badgeWarp');
+      const warpModeBadge = document.getElementById('warpModeBadge');
+      document.getElementById('chkWarpShield').checked = !!config.warp_shield_enabled;
+      document.getElementById('chkTlsFrag').checked = !!config.tls_fragment_enabled;
+      document.getElementById('chkIpConnect').checked = !!config.ip_connect_mode;
+      document.getElementById('chkBindWifi').checked = !!config.bind_to_wifi;
+      document.getElementById('chkForceTun').checked = !!data.force_tun;
+
+      if (config.warp_shield_enabled) {
+        cardWarp.className = 'bento-card state-ok';
+        setBadge(badgeWarp, 'ok', 'Aktif');
+        setBadge(warpModeBadge, 'ok', 'Aktif');
+        document.getElementById('warpStatusText').textContent = 'WARP-Shield';
+        document.getElementById('warpSubText').textContent = 'Soket havuzu ve şifreli DNS';
+      } else {
+        cardWarp.className = 'bento-card state-warn';
+        setBadge(badgeWarp, 'warn', 'Kapalı');
+        setBadge(warpModeBadge, 'warn', 'Kapalı');
+        document.getElementById('warpStatusText').textContent = 'Standart';
+        document.getElementById('warpSubText').textContent = 'Doğrudan yönlendirme';
+      }
+
+      // WireSock button
+      const btnWs = document.getElementById('btnWireSock');
+      const btnWsText = document.getElementById('btnWireSockText');
+      if (stats.wiresock_running) {
+        btnWs.className = 'btn btn-sm btn-danger';
+        btnWsText.textContent = 'WireSock: Durdur';
+      } else {
+        btnWs.className = 'btn btn-sm';
+        btnWsText.textContent = 'WireSock: Başlat';
+      }
+
+      // 4. 8.8.8.8 Reachability Card
+      const c8 = stats.last_8888_check || {};
+      const card8888 = document.getElementById('card8888');
+      const badge8888 = document.getElementById('badge8888');
+      if (c8.proxy_8888_ok) {
+        card8888.className = 'bento-card state-ok';
+        setBadge(badge8888, 'ok', 'Açık');
+        document.getElementById('reach8888Main').textContent = `Erişim Var (${c8.proxy_8888_latency_ms ?? '-'} ms)`;
+      } else {
+        card8888.className = 'bento-card state-warn';
+        setBadge(badge8888, 'warn', pCheck.status_code === 407 ? '407' : 'Kapalı');
+        document.getElementById('reach8888Main').textContent = c8.proxy_8888_detail || 'Bekleniyor';
+      }
+      document.getElementById('reach8888Sub').textContent =
+        `Doğrudan: ${c8.direct_8888_ok ? 'Açık (' + c8.direct_latency_ms + ' ms)' : 'Engelli'}`;
+      document.getElementById('exitIpLabel').textContent =
+        `Çıkış IP: ${c8.exit_ip || '-'}`;
+
+      // System Proxy Button & Badge
+      const sysBadge = document.getElementById('sysProxyBadge');
+      const btnSys = document.getElementById('btnSysProxy');
+      const btnSysText = document.getElementById('btnSysProxyText');
+      if (sys_proxy.enabled) {
+        setBadge(sysBadge, 'ok', 'Sistem Proxy: Açık');
+        btnSys.className = 'btn btn-danger';
+        btnSysText.textContent = 'Sistem Proxy: Kapat';
+      } else {
+        setBadge(sysBadge, 'warn', 'Sistem Proxy: Kapalı');
+        btnSys.className = 'btn';
+        btnSysText.textContent = 'Sistem Proxy: Aç';
+      }
+
+      // TUN (virtual adapter)
+      const tun = data.tun || {};
+      const tunBadge = document.getElementById('tunBadge');
+      const btnTun = document.getElementById('btnTun');
+      const btnTunText = document.getElementById('btnTunText');
+      if (tun.running) {
+        const mbT = (((tun.tx_bytes || 0) + (tun.rx_bytes || 0)) / (1024 * 1024)).toFixed(1);
+        setBadge(tunBadge, 'ok', `TUN: Açık${tun.udp ? ' (TCP+UDP)' : ' (TCP+DNS)'} · ${mbT} MB`);
+        btnTun.className = 'btn btn-danger';
+        btnTunText.textContent = 'Sanal Adaptör: Kapat';
+      } else if (tun.starting) {
+        setBadge(tunBadge, 'info', 'TUN: Başlatılıyor');
+        btnTun.className = 'btn';
+        btnTunText.textContent = 'Sanal Adaptör: ...';
+      } else {
+        setBadge(tunBadge, tun.last_error ? 'err' : 'warn', 'TUN: Kapalı');
+        tunBadge.title = tun.last_error || '';
+        btnTun.className = 'btn';
+        btnTunText.textContent = data.is_admin ? 'Sanal Adaptör: Aç' : 'Sanal Adaptör: Aç (Yönetici)';
+      }
+
+      // UDP relay
+      const relay = data.relay || {};
+      document.getElementById('relayState').textContent = relay.server ? `· ${relay.server}` : '· kapalı';
+      document.getElementById('relayTokenHint').textContent = relay.has_token ? '(Kayıtlı)' : '';
+      if (!relayEdited) {
+        document.getElementById('inpRelayServer').value = relay.server || '';
+        document.getElementById('inpRelayFp').value = relay.fingerprint || '';
+      }
+
+      if (!userEditedInputs) {
+        document.getElementById('inpUser').value = config.username || '';
+      }
+      document.getElementById('passSavedHint').textContent = config.has_password ? '(Kayıtlı)' : '';
+
+      // Telemetry Counters
+      document.getElementById('statPool').textContent = stats.pooled_hits || 0;
+      document.getElementById('statAnon').textContent = stats.anonymized_connects || 0;
+      document.getElementById('statConn').textContent = stats.active_connections || 0;
+      document.getElementById('statBytes').textContent = fmtBytes(stats.bytes_transferred || 0);
+      document.getElementById('statTotal').textContent = fmtBytes(stats.total_bytes || 0);
+
+      const btnScan = document.getElementById('btnScanAll');
+      btnScan.disabled = !!stats.scan_in_progress;
+
+      renderProxyTable();
+    }
+
+    function renderProxyTable() {
+      if (!latestState || !latestState.proxies) return;
+      const filter = (document.getElementById('inpFilter').value || '').toLowerCase();
+      const tbody = document.getElementById('proxyTableBody');
+
+      const filtered = latestState.proxies.filter(p => {
+        return p.uni.toLowerCase().includes(filter) ||
+               p.host.toLowerCase().includes(filter) ||
+               (p.ip && p.ip.toLowerCase().includes(filter));
+      });
+
+      filtered.sort((a, b) => {
+        if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+        const aOk = a.scan && a.scan.tcp_ok ? 1 : 0;
+        const bOk = b.scan && b.scan.tcp_ok ? 1 : 0;
+        if (aOk !== bOk) return bOk - aOk;
+        const aLat = (a.scan && a.scan.latency_ms) || 9999;
+        const bLat = (b.scan && b.scan.latency_ms) || 9999;
+        return aLat - bLat;
+      });
+
+      tbody.innerHTML = filtered.map(p => {
+        const s = p.scan;
+        let badgeHtml = '<span class="out-badge info"><span class="live-dot"></span><span>Bekliyor</span></span>';
+        let statusText = '-';
+        let latText = '-';
+
+        if (s) {
+          statusText = s.status_text || '-';
+          latText = s.latency_ms != null ? `${s.latency_ms} ms` : '-';
+          if (s.status_code === 200) {
+            badgeHtml = '<span class="out-badge ok"><span class="live-dot"></span><span>Açık</span></span>';
+          } else if (s.status_code === 407) {
+            badgeHtml = '<span class="out-badge warn"><span class="live-dot"></span><span>407</span></span>';
+          } else if (s.tcp_ok) {
+            badgeHtml = `<span class="out-badge warn"><span class="live-dot"></span><span>${s.status_code}</span></span>`;
+          } else {
+            badgeHtml = '<span class="out-badge err"><span class="live-dot"></span><span>Kapalı</span></span>';
+          }
+        }
+
+        const rowClass = p.is_active ? 'active-row' : '';
+        const btnClass = p.is_active ? 'btn btn-sm btn-primary' : 'btn btn-sm';
+        const btnInner = p.is_active
+          ? `${SVG_CHECK}<span>Seçili</span>`
+          : `<span>Seç</span>`;
+        const safeUni = p.uni.replace(/'/g, "\\'");
+        const savedTag = p.has_Saved_creds
+          ? `<span class="out-badge ok" style="padding:1px 6px;font-size:0.68rem;margin-left:6px;">${SVG_KEY}<span>Kayıtlı</span></span>`
+          : '';
+
+        return `
+          <tr class="${rowClass}">
+            <td>${badgeHtml}</td>
+            <td><strong style="color:var(--fg);font-weight:500;">${p.uni}</strong>${savedTag}</td>
+            <td class="mono" style="color:var(--info);">${p.host}:${p.port}</td>
+            <td class="mono" style="color:var(--fg-muted);">${p.ip || '-'}</td>
+            <td>${statusText}</td>
+            <td class="mono">${latText}</td>
+            <td>
+              <button class="${btnClass}" onclick="selectProxy('${p.host}', ${p.port}, '${safeUni}')">${btnInner}</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function saveCredentialsAndTest() {
+      const username = document.getElementById('inpUser').value;
+      const password = document.getElementById('inpPass').value;
+      const logBox = document.getElementById('diagLogs');
+      logBox.textContent = '> Proxy bağlantısı ve 8.8.8.8 erişimi doğrulanıyor...';
+
+      const res = await fetch('/api/proxy/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      userEditedInputs = false;
+      document.getElementById('inpPass').value = '';
+      if (data.diag && data.diag.logs) {
+        logBox.textContent = data.diag.logs.join('\n');
+      }
+      await fetchStatus();
+    }
+
+    async function selectProxy(host, port, uni) {
+      const username = document.getElementById('inpUser').value;
+      const password = document.getElementById('inpPass').value;
+      const logBox = document.getElementById('diagLogs');
+      logBox.textContent = `> ${uni} (${host}:${port}) seçiliyor...`;
+
+      const res = await fetch('/api/proxy/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host, port, uni, username, password })
+      });
+      const data = await res.json();
+      userEditedInputs = false;
+      if (data.diag && data.diag.logs) {
+        logBox.textContent = data.diag.logs.join('\n');
+      }
+      await fetchStatus();
+    }
+
+    async function runSpeedTest() {
+      const btn = document.getElementById('btnSpeedTest');
+      const logBox = document.getElementById('diagLogs');
+      btn.disabled = true;
+      logBox.textContent = '> Hız ölçümü yapılıyor...';
+      try {
+        const res = await fetch('/api/test/speed', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          logBox.textContent = '> ' + data.log;
+        } else {
+          logBox.textContent = '> Hata: ' + (data.error || 'Bilinmeyen hata');
+        }
+      } finally {
+        btn.disabled = false;
+        await fetchStatus();
+      }
+    }
+
+    async function run8888Test() {
+      const btn = document.getElementById('btnTest8888');
+      const logBox = document.getElementById('diagLogs');
+      btn.disabled = true;
+      logBox.textContent = '> 8.8.8.8 doğrulaması yapılıyor...';
+      try {
+        const res = await fetch('/api/test/8888', { method: 'POST' });
+        const data = await res.json();
+        if (data.diag && data.diag.logs) {
+          logBox.textContent = data.diag.logs.join('\n');
+        }
+      } finally {
+        btn.disabled = false;
+        await fetchStatus();
+      }
+    }
+
+    async function scanAllProxies() {
+      await fetch('/api/proxy/scan', { method: 'POST' });
+      await fetchStatus();
+    }
+
+    async function addNewProxy() {
+      const uni = document.getElementById('inpNewUni').value;
+      const host_port = document.getElementById('inpNewHostPort').value;
+      if (!host_port) return alert('Lütfen IP:Port girin');
+      const res = await fetch('/api/proxy/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uni, host_port })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        alert(data.error || 'Hata oluştu');
+        return;
+      }
+      document.getElementById('inpNewUni').value = '';
+      document.getElementById('inpNewHostPort').value = '';
+      await fetchStatus();
+    }
+
+    async function onToggleWarpShield() {
+      const enable = document.getElementById('chkWarpShield').checked;
+      const tls_fragment = document.getElementById('chkTlsFrag').checked;
+      const ip_connect_mode = document.getElementById('chkIpConnect').checked;
+      await fetch('/api/warp/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'shield', enable, tls_fragment, ip_connect_mode })
+      });
+      await fetchStatus();
+    }
+
+    async function toggleWireSock() {
+      const wantEnable = !(latestState && latestState.stats && latestState.stats.wiresock_running);
+      const res = await fetch('/api/warp/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'wiresock', enable: wantEnable })
+      });
+      const data = await res.json();
+      if (data.message) {
+        document.getElementById('diagLogs').textContent = `[WireSock] ${data.message}`;
+      }
+      await fetchStatus();
+    }
+
+    async function toggleSystemProxy() {
+      const currentlyEnabled = latestState && latestState.sys_proxy && latestState.sys_proxy.enabled;
+      await fetch('/api/sysproxy/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable: !currentlyEnabled })
+      });
+      await fetchStatus();
+    }
+
+    async function toggleTun() {
+      const logBox = document.getElementById('diagLogs');
+      const running = latestState && latestState.tun && latestState.tun.running;
+      if (!running && latestState && !latestState.is_admin) {
+        if (!confirm('Sanal ağ bağdaştırıcısı yönetici yetkisi ister. GSB Gateway yönetici olarak yeniden başlatılsın mı?')) return;
+        logBox.textContent = '> Yönetici olarak yeniden başlatılıyor (UAC onayı bekleniyor)...';
+        await fetch('/api/app/elevate', { method: 'POST' });
+        return;
+      }
+      logBox.textContent = running ? '> Sanal adaptör kapatılıyor, rotalar geri alınıyor...' : '> GSB-TUN sanal adaptörü oluşturuluyor...';
+      const res = await fetch('/api/tun/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable: !running })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        logBox.textContent = running
+          ? '> Sanal adaptör kapatıldı. Trafik normal Wi-Fi rotasına döndü.'
+          : '> Sanal adaptör aktif: tüm TCP ve DNS trafiği proxy üzerinden akıyor.' + (data.tun && data.tun.udp ? ' UDP, udpgw rölesi üzerinden.' : " UDP (QUIC vb.) engellendi; uygulamalar TCP'ye geçer.");
+      } else {
+        logBox.textContent = '> Hata: ' + (data.error || 'Bilinmeyen hata');
+      }
+      await fetchStatus();
+    }
+
+    let relayEdited = false;
+    ['inpRelayServer', 'inpRelayFp', 'inpRelayToken'].forEach(id =>
+      document.getElementById(id).addEventListener('input', () => { relayEdited = true; }));
+
+    async function saveRelay() {
+      const logBox = document.getElementById('diagLogs');
+      const res = await fetch('/api/tun/udpgw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          server: document.getElementById('inpRelayServer').value,
+          token: document.getElementById('inpRelayToken').value,
+          fingerprint: document.getElementById('inpRelayFp').value
+        })
+      });
+      const data = await res.json();
+      logBox.textContent = data.ok ? '> Röle ayarları kaydedildi. ' + (data.note || '') : '> Hata: ' + data.error;
+      document.getElementById('inpRelayToken').value = '';
+      relayEdited = false;
+      await fetchStatus();
+    }
+
+    async function testRelayNow() {
+      const logBox = document.getElementById('diagLogs');
+      logBox.textContent = '> Röle test ediliyor (proxy → röle → 1.1.1.1:53 UDP)...';
+      const res = await fetch('/api/relay/test', { method: 'POST' });
+      const data = await res.json();
+      logBox.textContent = data.ok
+        ? `> Röle çalışıyor: UDP DNS yanıtı ${data.latency_ms} ms içinde geldi.`
+        : '> Röle hatası: ' + data.error;
+    }
+
+    async function onToggleForceTun() {
+      const enable = document.getElementById('chkForceTun').checked;
+      await fetch('/api/tun/force', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable })
+      });
+      await fetchStatus();
+    }
+
+    async function onToggleWifiBind() {
+      const bind_to_wifi = document.getElementById('chkBindWifi').checked;
+      await fetch('/api/wifi/bind', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bind_to_wifi })
+      });
+      await fetchStatus();
+    }
+
+    async function connectGsbWifi() {
+      const logBox = document.getElementById('diagLogs');
+      logBox.textContent = '> GSBWIFI ağına bağlanılıyor...';
+      const res = await fetch('/api/wifi/connect', { method: 'POST' });
+      const data = await res.json();
+      logBox.textContent = data.output || (data.ok ? 'Bağlandı.' : 'Bağlanılamadı.');
+      await fetchStatus();
+    }
+
+    fetchStatus();
+    setInterval(fetchStatus, 3000);
+  </script>
+</body>
+</html>

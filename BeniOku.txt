@@ -1,0 +1,116 @@
+========================================================================
+        GSB Wi-Fi Gateway & Guvenli Tunel Kontrol Merkezi (Portable)
+========================================================================
+
+Bu paket TEK PARCA bir uygulamadir: "GSB_Gateway.exe" her seyi (motor,
+wintun.dll, panel, proxy listesi) icinde tasir. Baska dosya gerekmez;
+calistirinca gerekli parcalari %APPDATA%\GSB Gatewayin altina kendi cikarir.
+(server\ klasoru yalnizca UDP rolesini kendi sunucuna kurmak icindir.)
+
+AYARLARIN YERI:
+Kullanici adi, sifre, role ayarlari ve proxy listesi exe'nin yaninda DEGIL,
+su klasorde saklanir:  %APPDATA%\GSB Gateway
+(Explorer adres cubuguna %APPDATA%\GSB Gateway yazip Enter'a basin.)
+Sifre ve role token'i Windows hesabiniza bagli olarak sifrelenir (DPAPI);
+dosya baska bir bilgisayara/hesaba kopyalanirsa acilmaz.
+Programi baska bir klasore tasimak veya guncellemek ayarlari silmez.
+Eski surumden kalan config.json exe'nin yaninda duruyorsa ilk acilista
+otomatik olarak bu klasore tasinir.
+
+KULLANIM:
+------------------------------------------------------------------------
+1. "GSB_Gateway.exe" dosyasina cift tiklayin. Program SISTEM TEPSISINDE
+   (saat yaninda) bir kalkan simgesi olarak calisir; ayar penceresi
+   uygulama gibi acilir.
+   - Tepsi simgesine SOL TIK: ayar paneli UYGULAMA PENCERESI olarak acilir
+     (WebView2; tek pencere, tekrar tiklayinca ayni pencere one gelir).
+   - Tepsi simgesine SAG TIK: menu (Sanal Adaptor, Sistem Proxy,
+     Trafigi TUN'a Zorla, Cikis).
+2. Universite kullanici adi ve sifrenizi girip "Kaydet ve Baglan"a basin.
+3. Trafigi yonlendirmek icin "Sanal Adaptor: Ac" (tum sistem, UDP dahil)
+   veya "Sistem Proxy: Ac" (tarayicilar) secin.
+4. "Trafigi TUN'a Zorla" acikken, sanal adaptor acik oldugu surece Windows
+   Wi-Fi'ye dusemez (uplink metrigi yukseltilir); "internet yok" yazsa bile
+   uygulamalar tunelden cikar.
+5. Cikmak icin tepsi menusunden "Cikis" deyin. (Pencereyi kapatmak
+   programi kapatmaz, tepside calismaya devam eder.)
+
+
+ANTIGRAVITY / VS CODE / GIT / TERMINAL UYGULAMALARI ICIN COZUM:
+------------------------------------------------------------------------
+Soru: Tarayici internete giriyor ama Antigravity veya benzeri uygulamalar
+      neden baglanamiyor?
+
+Cevap:
+Chrome ve Edge gibi tarayicilar Windows'un standart sistem proxy ayarini
+dogrudan kullanir. Ancak Antigravity, VS Code, Discord, Git, Python ve
+Node.js gibi gelistirici araclari Windows proxy ayarini otomatik okumaz;
+"HTTP_PROXY" ortam degiskenine veya kendi ayarlarina bakar.
+
+COZUM YONTEMLERI:
+
+1. YONTEM (Otomatik):
+   GSB_Gateway uzerinde "Sistem Proxy: Ac" butonuna bastiginizda, artik
+   otomatik olarak Windows Kullanici Ortam Degiskenleri (HTTP_PROXY ve
+   HTTPS_PROXY) de "http://127.0.0.1:8880" olarak tanimlanir.
+   - Dikkat: Antigravity proxy'yi acmadan once zaten aciksa, yeni ortam
+     degiskenini algilamasi icin Antigravity'yi bir kez kapatip acmaniz
+     yeterlidir.
+
+2. YONTEM (Antigravity Icerisinden Kalici Ayar):
+   - Antigravity icinde "Ctrl + ," (Settings / Ayarlar) tuslarina basin.
+   - Arama kutusuna "proxy" yazin.
+   - "Http: Proxy" satirina su adresi yazin:
+     http://127.0.0.1:8880
+   - "Http: Proxy Support" ayarini "override" veya "on" yapin.
+   Artik Antigravity tum AI model ve arka plan baglantilarini proxy
+   uzerinden sorunsuz sekilde yapacaktir.=
+
+SANAL AG BAGDASTIRICISI (TUN MODU) - TUM SISTEM TRAFIGI:
+------------------------------------------------------------------------
+"Sistem Proxy" yalnizca proxy ayarini okuyan uygulamalari kapsar.
+"Sanal Adaptor: Ac" butonu ise GSB-TUN adinda sanal bir ag karti olusturur
+ve TUM uygulamalarin (oyunlar, Discord, Git, terminal, VS Code...) TCP ve
+DNS trafigini proxy uzerinden gecirir. Hicbir uygulamada ayar gerekmez.
+
+- Yonetici yetkisi ister: butona bastiginizda UAC onayi istenir ve
+  GSB_Gateway yonetici olarak yeniden baslar.
+- DNS sorgulari GSB DNS'ine gitmez; alan adi dogrudan proxy'ye iletilir.
+- Duz HTTP (80) ve HTTPS (443) calisir. Universite proxy'si diger
+  portlara (ornegin 22, 5222) CONNECT izni vermiyorsa o baglantilar kurulamaz.
+- UDP (QUIC, sesli arama, oyun UDP'si) HTTP proxy'den tek basina GECEMEZ.
+  Role ayarlanmamissa bu trafik engellenir; tarayicilar ve cogu uygulama
+  otomatik olarak TCP'ye gecer. Tam UDP icin asagidaki "UDP ROLESI"ne bakin.
+- Kapatinca veya program kapaninca tum rotalar otomatik geri alinir.
+- Ag degisirse (ornegin Ethernet'ten GSB Wi-Fi'ye gecis) sanal adaptor
+  birkac saniye icinde kendini yeni aga gore yeniden kurar.
+- WireSock / baska bir VPN istemcisi aciksa DNS'i yakalayip TUN'u bozabilir;
+  TUN modunda onu kapatin.
+
+NOT: Universitenin FortiGate guvenlik duvari Netflix'i kendi tarafinda
+engelliyor. TUN modu GSB engellerini asar, ancak universite proxy'sinin
+kendi engelledigi siteler bu proxy uzerinden acilmaz.=
+
+UDP ROLESI (ISTEGE BAGLI):
+------------------------------------------------------------------------
+UDP'yi tasimak icin kendinize ait bir Linux sunucuda "gsb-relay" calisir.
+Universite proxy'si yalnizca 443 portuna izin verdigi icin role 443'te
+dinlemelidir. Trafik su yolu izler:
+  Uygulama -> GSB-TUN -> universite proxy'si (CONNECT :443) -> gsb-relay -> hedef
+
+Sunucu kurulumu (dist\server klasoru):
+  1. gsb-relay dosyasini sunucuya /usr/local/bin/gsb-relay olarak kopyalayin
+     ve calistirilabilir yapin (chmod +x).
+  2. gsb-relay.service dosyasini /etc/systemd/system/ altina kopyalayin.
+  3. systemctl daemon-reload && systemctl enable --now gsb-relay
+  4. journalctl -u gsb-relay ciktisindaki "token" ve "sertifika SHA-256"
+     degerlerini not edin.
+
+Panelde "UDP Rolesi" bolumune sunucu IP:443, token ve parmak izini girip
+"Kaydet", sonra "Roleyi Test Et" deyin. Sanal adaptoru kapatip acinca UDP
+role uzerinden gecmeye baslar.
+
+Guvenlik: Role yalnizca dogru token'i gonderen istemcilere hizmet verir,
+sertifikasi parmak iziyle dogrulanir ve sunucunun kendi ic agina (ozel IP
+araliklari) UDP gondermeyi reddeder. Token'i kimseyle paylasmayin.
+========================================================================

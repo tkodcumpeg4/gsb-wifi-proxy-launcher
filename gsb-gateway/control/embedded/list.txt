@@ -1,0 +1,13 @@
+Üniversite Proxy Listesi (şablon)
+
+Bu dosya, panelin "Proxy Listesi" bölümünü doldurur. Her kurum için önce
+kurum adını kendi satırına, hemen altına da "IP:PORT" (veya "host:PORT")
+biçiminde proxy adresini yazın. Panelden "+ Ekle" ile de ekleyebilirsiniz.
+
+Örnek Üniversite A
+203.0.113.10:8080
+Örnek Üniversite B
+198.51.100.20:3128
+
+Not: Yalnızca erişim yetkiniz olan, kendi kurumunuzun proxy'sini kendi
+hesabınızla kullanın.

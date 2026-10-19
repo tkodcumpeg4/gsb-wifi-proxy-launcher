@@ -1,0 +1,14 @@
+{
+  "active_proxy_host": "",
+  "active_proxy_port": 8080,
+  "active_proxy_uni": "Proxy seçilmedi",
+  "username": "",
+  "password": "",
+  "proxy_credentials": {},
+  "warp_shield_enabled": true,
+  "ip_connect_mode": false,
+  "tls_fragment_enabled": true,
+  "bind_to_wifi": true,
+  "system_proxy_enabled": false,
+  "custom_proxies": []
+}

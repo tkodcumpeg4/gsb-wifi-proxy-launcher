@@ -1,5 +1,7 @@
 # GSB Wi-Fi Proxy Launcher
 
+**[English](#gsb-wi-fi-proxy-launcher) · [Türkçe](#türkçe)**
+
 A Windows tray app that routes a PC's traffic through a **university HTTP proxy**
 on a filtered campus/dorm (GSB/KYK) Wi-Fi, using the user's **own** proxy account.
 It brings up a virtual network adapter (**GSB-TUN**) so that all **TCP** and **DNS**
@@ -8,9 +10,10 @@ instead of only a browser's HTTP proxy setting.
 
 > ⚠️ **Disclaimer.** This is a personal tool, for use with your **own** university
 > account and your **own** server. Bypassing network filters/restrictions, defeating
-> DPI, or hiding traffic may violate the relevant institution's Acceptable Use Policy
-> and can lead to account suspension or disciplinary action. Enabling the
-> spoofing/tunneling features is entirely at the user's discretion and risk. It does
+> DPI, **tunneling UDP through an external relay** that the proxy does not allow, or
+> hiding traffic may violate the relevant institution's Acceptable Use Policy and can
+> lead to account suspension or disciplinary action. Enabling the spoofing, UDP relay
+> and tunneling features is entirely at the user's discretion and risk. It does
 > **not** cover someone else's accounts or any unauthorized access.
 
 ---
@@ -123,4 +126,77 @@ destinations.
 
 ## License
 
-See [LICENSE](LICENSE).
+Licensed under the **Apache License 2.0** — see [LICENSE](LICENSE).
+
+---
+
+# Türkçe
+
+Filtreli bir kampüs/yurt (GSB/KYK) Wi-Fi ağında, kullanıcının **kendi** üniversite
+proxy hesabıyla, bilgisayarın trafiğini bir **üniversite HTTP proxy'si** üzerinden
+yönlendiren bir Windows tepsi (tray) uygulaması. Sanal bir ağ bağdaştırıcısı
+(**GSB-TUN**) oluşturur; böylece yalnızca tarayıcının proxy ayarı değil, tüm **TCP**
+ve **DNS** — ve isteğe bağlı olarak kendi sunucunuzdaki bir röle ile **UDP** — tek bir
+güvenli tünelden akar.
+
+> ⚠️ **Sorumluluk Reddi.** Bu araç; kullanıcının **kendi** üniversite hesabı ve
+> **kendi** sunucusuyla kişisel kullanım içindir. Ağ filtrelerini/kısıtlamalarını
+> atlatmak, DPI'ı aşmak, proxy'nin izin vermediği **UDP trafiğini harici bir röle
+> üzerinden tünellemek** veya trafiği gizlemek ilgili kurumun ağ kullanım politikasına
+> (AUP) aykırı olabilir ve hesabın askıya alınması dâhil disiplin sonuçları doğurabilir.
+> Spoofing, UDP rölesi ve tünelleme özelliklerini kullanmak tamamen kullanıcının
+> inisiyatifindedir; her türlü sorumluluk kullanıcıya aittir. Başkasına ait hesapları
+> veya izinsiz erişimi kapsamaz.
+
+### Nasıl çalışır
+
+Kampüs proxy'si yalnızca **443 portuna `CONNECT`** izni veren bir HTTP proxy'sidir
+(Squid + FortiGate); TCP taşır, UDP taşımaz ve kurumun filtresini uygular. Bu araç,
+Wintun adaptörünün arkasında yerel bir TCP/IP yığını çalıştırıp her şeyi kullanıcının
+kimlik bilgileriyle bu proxy'den geçirir. Mimari şema için yukarıdaki İngilizce
+bölümdeki diyagrama bakın.
+
+- **TCP** → proxy üzerinden `CONNECT host:port`. Alan adları yerel **sahte-IP DNS**'ten
+  gelir; gerçek ad proxy'ye iletilir, kampüs DNS filtresi devreye girmez.
+- **DNS** → yerel olarak sahte IP'lerle (`198.18.0.0/15`) yanıtlanır.
+- **Düz HTTP (:80)** → proxy `CONNECT :80`'i reddettiği için normal proxy isteğine çevrilir.
+- **UDP** → `:443`'te çalışan, kullanıcıya ait bir **röleye** TLS üzerinden **udpgw**
+  çerçeveleri olarak tünellenir. Röle yoksa UDP düşürülür.
+- **WARP-Shield / TLS maskeleme** → ön-ısıtmalı soket havuzu, DoH, başlık temizleme ve
+  DPI'ı atlatmaya yardımcı ClientHello maskelemesi.
+
+### Derleme
+
+Gereksinimler: Windows, **Go 1.26+**, **Rust** (stable) ve WebView2 çalışma zamanı
+(Windows 10/11'de varsayılan gelir).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File gsb-gateway\build.ps1
+```
+
+Bu komut; Rust çekirdeğini derler, onu + imzalı `wintun.dll`'i + proxy listesini
+`gsb-gateway\control\embedded\` altına yerleştirir, ikonu üretir, **tek parça**
+`GSB_Gateway.exe` üretir ve `dist\` + `GSB_Gateway.zip` hazırlar.
+
+### Kullanım
+
+1. `GSB_Gateway.exe`'yi çalıştırın — sistem tepsisinde (kalkan simgesi) durur. **Sol
+   tık** paneli uygulama penceresi olarak açar; **sağ tık** menü.
+2. Üniversite proxy kullanıcı adı/şifrenizi girip bir proxy seçin, **Kaydet ve Bağlan**.
+3. Trafiği yönlendirmek için **Sistem Proxy** (tarayıcılar) veya **Sanal Adaptör / TUN**
+   (tüm sistem, UDP dâhil) seçin. TUN yönetici izni ister.
+4. **Trafiği TUN'a Zorla**, tünel açıkken Windows'un Wi-Fi'ye düşmesini engeller.
+
+Ayarlar (şifreler DPAPI ile şifreli), proxy listesi, kullanım sayaçları ve loglar
+`%APPDATA%\GSB Gateway\` altında tutulur; exe'nin yanına hassas bir şey yazılmaz.
+
+### UDP rölesi (isteğe bağlı)
+
+Sesli arama/oyun/QUIC gibi UDP trafiğini taşımak için kendi Linux sunucunuzda
+`gsb-relay`'i çalıştırın; proxy yalnızca `CONNECT :443`'e izin verdiği için **:443**'te
+dinlemelidir. Kurulum adımları yukarıdaki İngilizce bölümdedir. Röle, istemcileri
+paylaşılan bir token ile doğrular ve sertifikasını SHA-256 parmak iziyle sabitler.
+
+### Lisans
+
+**Apache License 2.0** — bkz. [LICENSE](LICENSE).

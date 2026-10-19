@@ -709,11 +709,12 @@
         bir tünelden geçirmek için kişisel bir araçtır. Sanal bir ağ bağdaştırıcısı (GSB-TUN) oluşturur.
       </p>
       <div class="intro-disc">
-        <strong>Sorumluluk Reddi.</strong> Ağ filtrelerini/kısıtlamalarını atlatmak, DPI'ı aşmak veya
+        <strong>Sorumluluk Reddi.</strong> Ağ filtrelerini/kısıtlamalarını atlatmak, DPI'ı aşmak,
+        proxy'nin taşımadığı <strong>UDP trafiğini harici bir röle üzerinden tünellemek</strong> veya
         trafiği gizlemek ilgili kurumun ağ kullanım politikasına (AUP) aykırı olabilir ve hesabın askıya
-        alınması dâhil disiplin sonuçları doğurabilir. Spoofing/tünelleme özelliklerini kullanmak tamamen
-        kullanıcının inisiyatifindedir; doğacak her türlü sorumluluk kullanıcıya aittir. Başkasına ait
-        hesapları veya izinsiz erişimi kapsamaz.
+        alınması dâhil disiplin sonuçları doğurabilir. Spoofing, UDP rölesi ve tünelleme özelliklerini
+        kullanmak tamamen kullanıcının inisiyatifindedir; doğacak her türlü sorumluluk kullanıcıya aittir.
+        Başkasına ait hesapları veya izinsiz erişimi kapsamaz.
       </div>
       <button class="btn btn-primary" onclick="document.getElementById('introOverlay').classList.remove('show')">
         <span>Anladım, devam et</span>
@@ -1020,9 +1021,10 @@
     <footer class="disclaimer">
       <strong>Sorumluluk Reddi Beyanı.</strong>
       Bu araç yalnızca kullanıcının <em>kendi</em> üniversite hesabı ve <em>kendi</em> sunucusuyla,
-      kişisel kullanım için sağlanmıştır. Ağ filtrelerini/kısıtlamalarını atlatmak, DPI'ı aşmak
+      kişisel kullanım için sağlanmıştır. Ağ filtrelerini/kısıtlamalarını atlatmak, DPI'ı aşmak,
+      proxy'nin izin vermediği <strong>UDP trafiğini harici bir röle üzerinden tünellemek</strong>
       veya trafiği gizlemek ilgili kurumun ağ kullanım politikasına (AUP) aykırı olabilir ve
-      hesabın askıya alınması dâhil disiplin sonuçları doğurabilir. Spoofing ve tünelleme
+      hesabın askıya alınması dâhil disiplin sonuçları doğurabilir. Spoofing, UDP rölesi ve tünelleme
       özelliklerini açmak tamamen kullanıcının inisiyatifindedir; doğacak her türlü sorumluluk
       kullanıcıya aittir. Başkasına ait hesapları veya izinsiz erişimi kapsamaz.
     </footer>

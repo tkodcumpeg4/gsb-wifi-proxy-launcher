@@ -41,6 +41,26 @@
 
   .app{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:20px 22px 40px;display:flex;flex-direction:column;gap:18px}
 
+  /* own window frame (Windows app window; see frame_windows.go) */
+  .titlebar,.rz{display:none}
+  .framed .titlebar{display:flex;position:fixed;top:0;left:0;right:0;height:34px;z-index:60;align-items:stretch}
+  .framed .app{padding-top:38px}
+  .titlebar .drag{flex:1}
+  .winctl{display:flex}
+  .winctl button{width:46px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:default;transition:background .12s,color .12s}
+  .winctl button:hover{background:rgba(255,255,255,.08);color:var(--fg)}
+  .winctl button.close:hover{background:#e81123;color:#fff}
+  .winctl svg{width:11px;height:11px}
+  .winctl .ic-restore{display:none}
+  .maxed .winctl .ic-max{display:none}
+  .maxed .winctl .ic-restore{display:block}
+  .framed:not(.maxed) .rz{display:block;position:fixed;z-index:70}
+  .rz.n,.rz.s{left:8px;right:8px;height:5px;cursor:ns-resize}.rz.n{top:0}.rz.s{bottom:0}
+  .rz.e,.rz.w{top:8px;bottom:8px;width:5px;cursor:ew-resize}.rz.e{right:0}.rz.w{left:0}
+  .rz.ne,.rz.nw,.rz.se,.rz.sw{width:9px;height:9px}
+  .rz.nw{top:0;left:0;cursor:nwse-resize}.rz.se{bottom:0;right:0;cursor:nwse-resize}
+  .rz.ne{top:0;right:0;cursor:nesw-resize}.rz.sw{bottom:0;left:0;cursor:nesw-resize}
+
   /* header */
   header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
   .brand{display:flex;align-items:center;gap:12px}
@@ -218,8 +238,21 @@
 </div>
 
 <div class="app">
-  <header>
-    <div class="brand">
+  <div class="titlebar">
+    <div class="drag" data-drag></div>
+    <div class="winctl">
+      <button onclick="gsbWinMinimize()" aria-label="Simge durumuna küçült" title="Simge durumuna küçült"><svg viewBox="0 0 10 10"><path d="M0 5h10" stroke="currentColor" stroke-width="1"/></svg></button>
+      <button onclick="winToggleMax()" aria-label="Ekranı kapla" title="Ekranı kapla">
+        <svg class="ic-max" viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+        <svg class="ic-restore" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1"><rect x=".5" y="2.5" width="7" height="7"/><path d="M2.5 2.5V.5h7v7h-2"/></svg>
+      </button>
+      <button class="close" onclick="gsbWinClose()" aria-label="Kapat" title="Kapat (uygulama tepside çalışmaya devam eder)"><svg viewBox="0 0 10 10"><path d="M0 0l10 10M10 0 0 10" stroke="currentColor" stroke-width="1.1"/></svg></button>
+    </div>
+  </div>
+  <div class="rz n" data-rz="n"></div><div class="rz s" data-rz="s"></div><div class="rz e" data-rz="e"></div><div class="rz w" data-rz="w"></div>
+  <div class="rz ne" data-rz="ne"></div><div class="rz nw" data-rz="nw"></div><div class="rz se" data-rz="se"></div><div class="rz sw" data-rz="sw"></div>
+  <header data-drag>
+    <div class="brand" data-drag>
       <div>
         <h1>GSB Proxy</h1>
         <div class="sub">127.0.0.1:8880</div>
@@ -776,6 +809,30 @@
 
   fetchStatus();
   setInterval(fetchStatus, 3000);
+
+  // Own window frame: only in the Windows app window, where frame_windows.go
+  // sets __gsbFrame and binds the gsbWin* functions.
+  if (window.__gsbFrame) {
+    const root = document.documentElement;
+    root.classList.add('framed');
+    const syncMax = () => window.gsbWinIsMax().then(m => root.classList.toggle('maxed', !!m));
+    window.winToggleMax = () => window.gsbWinToggleMax().then(m => root.classList.toggle('maxed', !!m));
+    window.addEventListener('resize', () => { syncMax(); setTimeout(syncMax, 200); });
+    syncMax();
+    let lastDown = 0;
+    document.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      const rz = e.target.closest('[data-rz]');
+      if (rz) { e.preventDefault(); window.gsbWinDrag(rz.dataset.rz); return; }
+      if (!e.target.closest('[data-drag]') || e.target.closest('button,a,input,select,textarea,label,[onclick]')) return;
+      e.preventDefault();
+      // The system move loop swallows the second click, so detect double-click here.
+      const now = Date.now();
+      if (now - lastDown < 400) { lastDown = 0; winToggleMax(); return; }
+      lastDown = now;
+      window.gsbWinDrag('caption');
+    });
+  }
 </script>
 </body>
 </html>

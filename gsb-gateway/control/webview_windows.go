@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
+	"unsafe"
 
 	webview "github.com/jchv/go-webview2"
 	"golang.org/x/sys/windows"
@@ -70,8 +71,11 @@ func runPanelWindow() {
 	if wv == nil {
 		panic("webview init failed")
 	}
+	hwnd := windows.HWND(wv.Window())
+	darkTitleBar(hwnd)
+	makeFrameless(wv, hwnd) // before Navigate: it installs the page bindings
 	panel.mu.Lock()
-	panel.wv, panel.hwnd = wv, windows.HWND(wv.Window())
+	panel.wv, panel.hwnd = wv, hwnd
 	panel.mu.Unlock()
 
 	wv.Navigate("http://" + webUIAddr)
@@ -84,6 +88,25 @@ var (
 	procShowWindow    = user32win.NewProc("ShowWindow")
 	procSetForeground = user32win.NewProc("SetForegroundWindow")
 )
+
+// darkTitleBar paints the caption in the panel's background (#080b14) so the
+// window chrome blends into the page. Windows 11 honours the colours; Windows
+// 10 (1809+) still gets the dark-mode caption.
+func darkTitleBar(h windows.HWND) {
+	const (
+		dwmwaUseImmersiveDarkMode = 20
+		dwmwaBorderColor          = 34
+		dwmwaCaptionColor         = 35
+		dwmwaTextColor            = 36
+	)
+	set := func(attr uintptr, v uint32) {
+		procDwmSetWindowAttribute.Call(uintptr(h), attr, uintptr(unsafe.Pointer(&v)), 4)
+	}
+	set(dwmwaUseImmersiveDarkMode, 1)
+	set(dwmwaCaptionColor, 0x00140b08) // COLORREF is 0x00BBGGRR
+	set(dwmwaBorderColor, 0x00140b08)
+	set(dwmwaTextColor, 0x00f2d7cf) // --fg2 #cfd7f2
+}
 
 func focusWindow(h windows.HWND) {
 	if h == 0 {

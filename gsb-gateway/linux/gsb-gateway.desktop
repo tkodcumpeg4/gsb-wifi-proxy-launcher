@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=GSB Gateway
+Comment=GSB Wi-Fi proxy köprüsü ve sanal adaptör
+Exec=gsb-gateway
+Icon=gsb-gateway
+Terminal=false
+Categories=Network;
+StartupNotify=false

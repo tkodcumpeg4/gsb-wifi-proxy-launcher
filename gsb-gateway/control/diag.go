@@ -176,7 +176,7 @@ func run8888Test() DiagResult {
 	if getConfig().BindToWifi {
 		logf("[2] Soket Bağlama Modu: GSB Wi-Fi Adaptörüne Zorunlu (%s)", wifi.IP)
 	} else {
-		logf("[2] Soket Bağlama Modu: Varsayılan Windows Rotası")
+		logf("[2] Soket Bağlama Modu: Varsayılan Sistem Rotası")
 	}
 
 	res := &Check8888{ExitIP: "-", ExitOrg: "-", Proxy8888Detail: "Bağlantı kurulamadı"}

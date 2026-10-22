@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -70,7 +69,7 @@ func newAPI() http.Handler {
 		readJSON(r, &p)
 		// Only open vetted https links in the default browser.
 		if strings.HasPrefix(p.URL, "https://github.com/") {
-			exec.Command("rundll32", "url.dll,FileProtocolHandler", p.URL).Start()
+			openURL(p.URL)
 			writeJSON(w, 200, map[string]any{"ok": true})
 			return
 		}

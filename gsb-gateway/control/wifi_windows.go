@@ -5,45 +5,12 @@ import (
 	"net"
 	"os/exec"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
-
-type WifiInfo struct {
-	Connected   bool     `json:"connected"`
-	IP          string   `json:"ip"`
-	Gateway     string   `json:"gateway"`
-	DNSSuffix   string   `json:"dns_suffix"`
-	AdapterName string   `json:"adapter_name"`
-	IfIndex     uint32   `json:"if_index"`
-	DNSServers  []string `json:"dns_servers"`
-}
-
-var wifiCache struct {
-	sync.Mutex
-	at   time.Time
-	info WifiInfo
-}
-
-// getWifiInfo replaces the Python ipconfig scraping with GetAdaptersAddresses,
-// which is independent of the Windows display language. Cached for 3 s.
-func getWifiInfo(force bool) WifiInfo {
-	wifiCache.Lock()
-	defer wifiCache.Unlock()
-	if !force && time.Since(wifiCache.at) < 3*time.Second {
-		return wifiCache.info
-	}
-	info := WifiInfo{AdapterName: "Wi-Fi"}
-	if a := findWifiAdapter(); a != nil {
-		info = *a
-	}
-	wifiCache.at, wifiCache.info = time.Now(), info
-	return info
-}
 
 func findWifiAdapter() *WifiInfo {
 	return findAdapter(func(a *windows.IpAdapterAddresses, name, desc, suffix string) bool {

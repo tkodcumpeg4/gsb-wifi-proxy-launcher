@@ -1,0 +1,79 @@
+========================================================================
+        GSB Wi-Fi Gateway & Guvenli Tunel Kontrol Merkezi (Linux)
+========================================================================
+
+"gsb-gateway" TEK PARCA bir programdir: motor (gsb-core), panel ve proxy
+listesi icindedir. Calistirinca gerekli parcalari ~/.config/gsb-gateway
+altina kendi cikarir. (server/ klasoru yalnizca UDP rolesi icindir.)
+
+Test edilen ortam: x86_64, systemd + NetworkManager + systemd-resolved
+(Ubuntu, Fedora, Debian, Mint, Arch vb.). Ek kutuphane gerekmez.
+
+KURULUM:
+------------------------------------------------------------------------
+  tar xzf GSB_Gateway-linux-amd64.tar.gz
+  cd GSB_Gateway
+  ./install.sh               (uygulama menusune ekler)
+  ./install.sh --autostart   (ayrica oturum acilinca baslatir)
+  ./install.sh --uninstall   (kaldirir; ayarlar silinmez)
+Kurmadan denemek icin: ./gsb-gateway
+
+AYARLARIN YERI:
+Kullanici adi, sifre, role ayarlari ve proxy listesi:
+  ~/.config/gsb-gateway
+Sifre ve role token'i bu klasordeki secret.key ile sifrelenir (AES-GCM).
+Windows'taki DPAPI kadar guclu degildir: secret.key ile config.json
+birlikte kopyalanirsa sifre acilabilir. Klasoru kimseyle paylasmayin.
+
+KULLANIM:
+------------------------------------------------------------------------
+1. "GSB Gateway"i menuden (veya ./gsb-gateway ile) acin. Panel,
+   Chromium/Chrome/Edge/Brave varsa uygulama penceresi olarak, yoksa
+   varsayilan tarayicida acilir. Tepside kalkan simgesi belirir:
+   - SOL TIK: paneli acar. SAG TIK: menu (Sanal Adaptor, Sistem Proxy,
+     Cikis).
+   - GNOME'da tepsi simgesi icin "AppIndicator and KStatusNotifierItem
+     Support" eklentisi gerekir (Ubuntu'da hazir gelir). Simge yoksa da
+     program calisir; paneli tarayicidan http://127.0.0.1:8765 ile acin.
+2. Universite kullanici adi ve sifrenizi girip "Kaydet ve Baglan"a basin.
+3. "Sanal Adaptor: Ac" (tum sistem, UDP dahil) veya "Sistem Proxy: Ac".
+4. Cikmak icin tepsi menusunden "Cikis". Panel penceresini kapatmak
+   programi kapatmaz.
+Terminal/sunucu modu: ./gsb-gateway --no-tray --no-browser
+
+SANAL ADAPTOR (TUN MODU):
+------------------------------------------------------------------------
+- Yalnizca motor (gsb-core) yonetici yetkisiyle calisir: butona basinca
+  sistemin parola penceresi (pkexec/polkit) acilir. Panel ve tepsi normal
+  kullanici olarak kalir.
+- GSB-TUN adinda bir arayuz olusturulur; tum IPv4 trafigi ona yonlenir.
+  systemd-resolved varsa DNS de tunele alinir (resolvectl status GSB-TUN).
+- "Trafigi TUN'a Zorla" Linux'ta gerekmez: rotalar zaten her uygulamayi
+  tunelden cikarir. Ayar etkisizdir.
+- Kapatinca veya program kapaninca rotalar ve kurallar geri alinir.
+- Ag degisirse sanal adaptor kendini yeni aga gore yeniden kurar (yeniden
+  parola sorulabilir).
+- Duz HTTP (80) ve HTTPS (443) calisir; universite proxy'si diger
+  portlara CONNECT izni vermiyorsa o baglantilar kurulamaz. UDP icin
+  asagidaki role gerekir.
+
+SISTEM PROXY:
+------------------------------------------------------------------------
+"Sistem Proxy: Ac" su ayarlari yapar:
+- GNOME / Cinnamon / Budgie: gsettings org.gnome.system.proxy (manuel).
+- KDE Plasma: kioslaverc proxy ayari.
+- Terminal ve gelistirici araclari: ~/.config/environment.d/
+  90-gsb-gateway-proxy.conf icine HTTP_PROXY/HTTPS_PROXY yazilir. Bunu
+  okumayan uygulamalar icin oturumu kapatip acin veya terminalde:
+    export HTTP_PROXY=http://127.0.0.1:8880 HTTPS_PROXY=http://127.0.0.1:8880
+
+Wi-Fi: "GSB Wi-Fi'ye Baglan" NetworkManager (nmcli) kullanir.
+WireSock yalnizca Windows'ta vardir; Linux'ta dahili WARP-Shield calisir.
+
+UDP ROLESI (ISTEGE BAGLI):
+------------------------------------------------------------------------
+Windows surumuyle aynidir: server/ klasorundeki gsb-relay'i kendi Linux
+sunucunuza kurun (/usr/local/bin/gsb-relay + gsb-relay.service,
+systemctl enable --now gsb-relay), journalctl -u gsb-relay ciktisindaki
+token ve sertifika SHA-256 degerlerini panelde "UDP Rolesi"ne girin.
+========================================================================

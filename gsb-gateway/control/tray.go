@@ -1,14 +1,10 @@
 package main
 
 import (
-	_ "embed"
 	"time"
 
 	"fyne.io/systray"
 )
-
-//go:embed tray.ico
-var trayIcon []byte
 
 // runTray shows the system-tray icon and menu and blocks until the user quits.
 // Left-click opens the panel as an app window; right-click shows the menu.

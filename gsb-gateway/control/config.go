@@ -113,7 +113,7 @@ func seedDataDir() {
 	}
 }
 
-// loadConfig reads config.json, decrypting DPAPI-protected passwords. A legacy
+// loadConfig reads config.json, decrypting sealed passwords (secret_*.go). A legacy
 // plaintext password is kept in memory and re-saved encrypted right away.
 func loadConfig() {
 	c := defaultConfig()
@@ -152,7 +152,7 @@ func loadConfig() {
 // a legacy plaintext field and therefore still needs to be written encrypted.
 func unsealPassword(plain, enc *string) bool {
 	if *enc != "" {
-		if p, err := dpapiDecrypt(*enc); err == nil {
+		if p, err := decryptSecret(*enc); err == nil {
 			*plain = p
 		}
 		return false
@@ -190,7 +190,7 @@ func sealPassword(p string) string {
 	if p == "" {
 		return ""
 	}
-	enc, err := dpapiEncrypt(p)
+	enc, err := encryptSecret(p)
 	if err != nil {
 		return ""
 	}

@@ -10,7 +10,7 @@ import (
 // DPAPI binds the ciphertext to the current Windows user, so a copied
 // config.json is useless on another account or machine.
 
-func dpapiEncrypt(plain string) (string, error) {
+func encryptSecret(plain string) (string, error) {
 	out, err := dpapiCall([]byte(plain), true)
 	if err != nil {
 		return "", err
@@ -18,7 +18,7 @@ func dpapiEncrypt(plain string) (string, error) {
 	return base64.StdEncoding.EncodeToString(out), nil
 }
 
-func dpapiDecrypt(enc string) (string, error) {
+func decryptSecret(enc string) (string, error) {
 	raw, err := base64.StdEncoding.DecodeString(enc)
 	if err != nil {
 		return "", err

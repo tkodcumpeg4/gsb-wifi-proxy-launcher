@@ -1,6 +1,6 @@
 // gsb-gateway is the control plane of GSB Gateway: the web panel on
-// 127.0.0.1:8765, the HTTP/CONNECT bridge on 127.0.0.1:8880 and all Windows
-// integration. It replaces the Python "Turbo v2" build feature-for-feature
+// 127.0.0.1:8765, the HTTP/CONNECT bridge on 127.0.0.1:8880 and the OS
+// integration (*_windows.go / *_linux.go). It replaces the Python "Turbo v2" build feature-for-feature
 // (see ../docs/BEHAVIOR.md) and supervises the Rust data plane (../core),
 // which provides the system-wide TUN mode.
 package main
@@ -20,7 +20,7 @@ import (
 func main() {
 	noBrowser := flag.Bool("no-browser", false, "başlangıçta paneli açma")
 	noTray := flag.Bool("no-tray", false, "tray simgesi olmadan çalıştır (konsol/servis modu)")
-	dir := flag.String("data-dir", "", "ayar/veri klasörü (varsayılan: %APPDATA%\\GSB Gateway)")
+	dir := flag.String("data-dir", "", "ayar/veri klasörü (varsayılan: Windows %APPDATA%\\GSB Gateway, Linux ~/.config/gsb-gateway)")
 	withTun := flag.Bool("tun", false, "başlangıçta sanal adaptörü (TUN) aç")
 	flag.Parse()
 
@@ -81,14 +81,6 @@ func main() {
 	}
 	runTray() // blocks on the main goroutine until the user quits
 	shutdown(0)
-}
-
-// defaultDataDir is %APPDATA%\GSB Gateway, falling back to the exe folder.
-func defaultDataDir() string {
-	if ad := os.Getenv("APPDATA"); ad != "" {
-		return filepath.Join(ad, "GSB Gateway")
-	}
-	return exeDir()
 }
 
 func listenRetry(addr string, wait time.Duration) net.Listener {

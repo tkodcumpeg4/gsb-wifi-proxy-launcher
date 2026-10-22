@@ -9,6 +9,8 @@ warp_wg.conf
 /dist/
 *.exe
 *.zip
+*.tar.gz
+/dist-linux/
 gsb-gateway/control/bin/
 gsb-gateway/relay/bin/
 gsb-gateway/core/target/

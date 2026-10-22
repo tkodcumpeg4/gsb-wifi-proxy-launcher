@@ -93,11 +93,7 @@ func dialOutbound(addr string, timeout time.Duration, forceWifi *bool) (net.Conn
 	d := net.Dialer{
 		Timeout: timeout,
 		Control: func(_, _ string, c syscall.RawConn) error {
-			c.Control(func(fd uintptr) {
-				h := syscall.Handle(fd)
-				syscall.SetsockoptInt(h, syscall.SOL_SOCKET, syscall.SO_RCVBUF, 512*1024)
-				syscall.SetsockoptInt(h, syscall.SOL_SOCKET, syscall.SO_SNDBUF, 512*1024)
-			})
+			c.Control(func(fd uintptr) { setSockBuffers(fd, 512*1024) })
 			return nil
 		},
 	}

@@ -5,40 +5,13 @@ import (
 	_ "embed"
 	"encoding/hex"
 	"os"
-	"path/filepath"
 )
 
-// gsb-core.exe and wintun.dll are embedded so GSB_Gateway.exe ships as a single
-// file. They are written to <data>\bin on startup (only when missing or
-// changed) and run from there.
-
-//go:embed embedded/gsb-core.exe
-var embeddedCore []byte
-
-//go:embed embedded/wintun.dll
-var embeddedWintun []byte
+// The proxy list ships inside the binary; the platform files embed gsb-core
+// (and wintun.dll on Windows) the same way.
 
 //go:embed embedded/list.txt
 var embeddedList []byte
-
-// extractBundled writes the embedded binaries to <baseDir>\bin and returns
-// their paths. It rewrites a file only when its content differs, so a running
-// gsb-core.exe is not disturbed unnecessarily.
-func extractBundled() (core, wintun string, err error) {
-	dir := filepath.Join(baseDir, "bin")
-	if err = os.MkdirAll(dir, 0o755); err != nil {
-		return "", "", err
-	}
-	core = filepath.Join(dir, "gsb-core.exe")
-	wintun = filepath.Join(dir, "wintun.dll")
-	if err = writeIfChanged(core, embeddedCore); err != nil {
-		return "", "", err
-	}
-	if err = writeIfChanged(wintun, embeddedWintun); err != nil {
-		return "", "", err
-	}
-	return core, wintun, nil
-}
 
 func writeIfChanged(path string, data []byte) error {
 	if len(data) == 0 {

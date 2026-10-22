@@ -2,7 +2,7 @@
 
 **[English](#gsb-wi-fi-proxy-launcher) · [Türkçe](#türkçe)**
 
-A Windows tray app that routes a PC's traffic through a **university HTTP proxy**
+A Windows (and Linux) tray app that routes a PC's traffic through a **university HTTP proxy**
 on a filtered campus/dorm (GSB/KYK) Wi-Fi, using the user's **own** proxy account.
 It brings up a virtual network adapter (**GSB-TUN**) so that all **TCP** and **DNS**
 — and optionally **UDP** via a self-hosted relay — flow through one secure tunnel,
@@ -55,8 +55,8 @@ flowchart LR
 
 | Path | Lang | Role |
 |---|---|---|
-| `gsb-gateway/control` | Go | Tray app, web panel (`:8765`), HTTP/`CONNECT` bridge (`:8880`), all Windows integration (Wintun supervision, routes, system proxy, DPAPI). Ships as a single `GSB_Gateway.exe` with the other pieces embedded. |
-| `gsb-gateway/core` | Rust | Data plane: creates the Wintun adapter and terminates traffic in a userspace TCP/IP stack ([tun2proxy]/ipstack), forwarding to the bridge. |
+| `gsb-gateway/control` | Go | Tray app, web panel (`:8765`), HTTP/`CONNECT` bridge (`:8880`), OS integration in `*_windows.go` / `*_linux.go` (TUN supervision, routes, system proxy, secret storage). Ships as a single `GSB_Gateway.exe` with the other pieces embedded. |
+| `gsb-gateway/core` | Rust | Data plane: creates the TUN adapter (Wintun on Windows, `/dev/net/tun` on Linux) and terminates traffic in a userspace TCP/IP stack ([tun2proxy]/ipstack), forwarding to the bridge. |
 | `gsb-gateway/relay` | Go | Optional UDP relay for a Linux VPS: TLS on `:443`, shared-token auth, udpgw forwarding. |
 | `ui.html` | HTML | The panel, embedded into the exe and served locally. |
 
@@ -93,6 +93,36 @@ list into `gsb-gateway\control\embedded\`, generates the app icon, builds a sing
 Settings (credentials are DPAPI-encrypted), the proxy list, usage counters and logs
 live in `%APPDATA%\GSB Gateway\`. Nothing sensitive is stored next to the exe.
 See [`config.example.json`](config.example.json) for the config shape.
+
+## Linux
+
+The same app runs on Linux (x86_64; systemd distros with NetworkManager and
+systemd-resolved). Download `GSB_Gateway-linux-amd64.tar.gz` from the releases, then:
+
+```bash
+tar xzf GSB_Gateway-linux-amd64.tar.gz && cd GSB_Gateway && ./install.sh
+```
+
+Differences from Windows:
+
+- Only the TUN engine (`gsb-core`) runs privileged, started through **pkexec** (the
+  desktop's password prompt); the panel and tray stay unprivileged.
+- Routes go through iproute2; sockets bound to the Wi-Fi address leave via the Wi-Fi
+  gateway (policy rule), and with systemd-resolved all DNS is pointed at the tunnel.
+- **System Proxy** sets GNOME (`gsettings`), KDE (`kioslaverc`) and `HTTP_PROXY` & co.
+  via `~/.config/environment.d/`.
+- Secrets are sealed with AES-GCM under `~/.config/gsb-gateway/secret.key` (weaker
+  than DPAPI: the key file sits next to the config). **Force traffic through TUN**
+  and WireSock are Windows-only.
+- The panel opens as a Chromium/Chrome/Edge/Brave app window, else in the default
+  browser. On GNOME the tray icon needs the AppIndicator extension.
+
+Build on Linux with Go 1.26+, Rust, the musl target and `musl-tools` (static core):
+
+```bash
+rustup target add x86_64-unknown-linux-musl
+bash gsb-gateway/build-linux.sh   # -> dist-linux/ + GSB_Gateway-linux-amd64.tar.gz
+```
 
 ## UDP relay (optional)
 
@@ -134,7 +164,7 @@ Licensed under the **Apache License 2.0** — see [LICENSE](LICENSE).
 
 Filtreli bir kampüs/yurt (GSB/KYK) Wi-Fi ağında, kullanıcının **kendi** üniversite
 proxy hesabıyla, bilgisayarın trafiğini bir **üniversite HTTP proxy'si** üzerinden
-yönlendiren bir Windows tepsi (tray) uygulaması. Sanal bir ağ bağdaştırıcısı
+yönlendiren bir Windows (ve Linux) tepsi (tray) uygulaması. Sanal bir ağ bağdaştırıcısı
 (**GSB-TUN**) oluşturur; böylece yalnızca tarayıcının proxy ayarı değil, tüm **TCP**
 ve **DNS** — ve isteğe bağlı olarak kendi sunucunuzdaki bir röle ile **UDP** — tek bir
 güvenli tünelden akar.
@@ -189,6 +219,22 @@ Bu komut; Rust çekirdeğini derler, onu + imzalı `wintun.dll`'i + proxy listes
 
 Ayarlar (şifreler DPAPI ile şifreli), proxy listesi, kullanım sayaçları ve loglar
 `%APPDATA%\GSB Gateway\` altında tutulur; exe'nin yanına hassas bir şey yazılmaz.
+
+### Linux
+
+Aynı uygulama Linux'ta da çalışır (x86_64; systemd + NetworkManager +
+systemd-resolved). Sürümlerden `GSB_Gateway-linux-amd64.tar.gz`'yi indirin:
+
+```bash
+tar xzf GSB_Gateway-linux-amd64.tar.gz && cd GSB_Gateway && ./install.sh
+```
+
+- Yalnızca TUN motoru (`gsb-core`) yetkiyle çalışır; **pkexec** parola penceresi
+  açılır. Panel ve tepsi normal kullanıcıda kalır.
+- **Sistem Proxy**; GNOME, KDE ve `~/.config/environment.d/` (HTTP_PROXY) ayarlarını yapar.
+- Şifreler `~/.config/gsb-gateway/secret.key` ile AES-GCM şifrelenir (DPAPI kadar
+  güçlü değildir). **Trafiği TUN'a Zorla** ve WireSock yalnızca Windows içindir.
+- Derleme: `bash gsb-gateway/build-linux.sh` (Go, Rust, musl hedefi ve `musl-tools`).
 
 ### UDP rölesi (isteğe bağlı)
 

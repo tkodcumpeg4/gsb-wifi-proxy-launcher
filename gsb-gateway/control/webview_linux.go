@@ -27,3 +27,7 @@ func openPanel() {
 	}
 	openURL(url)
 }
+
+// openTrayPopup: Linux tray hosts have no anchored popups, so a click opens
+// the full panel.
+func openTrayPopup() { openPanel() }

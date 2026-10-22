@@ -14,10 +14,14 @@ import (
 //go:embed web/ui.html
 var embeddedUI []byte
 
+//go:embed web/mini.html
+var embeddedMini []byte
+
 func newAPI() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", serveUI)
 	mux.HandleFunc("GET /index.html", serveUI)
+	mux.HandleFunc("GET /mini", serveMini)
 	mux.HandleFunc("GET /api/status", apiStatus)
 	mux.HandleFunc("POST /api/proxy/select", apiProxySelect)
 	mux.HandleFunc("POST /api/proxy/add", apiProxyAdd)
@@ -145,6 +149,18 @@ func serveUI(w http.ResponseWriter, r *http.Request) {
 	content, err := os.ReadFile(resourcePath("ui.html"))
 	if err != nil {
 		content = embeddedUI
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Write(content)
+}
+
+// serveMini is the small tray preview page (mini.html), overridable from disk
+// like ui.html.
+func serveMini(w http.ResponseWriter, r *http.Request) {
+	content, err := os.ReadFile(resourcePath("mini.html"))
+	if err != nil {
+		content = embeddedMini
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")

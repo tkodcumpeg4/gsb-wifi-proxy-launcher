@@ -13,7 +13,7 @@ root="$(dirname "$here")"
 dist="$root/dist-linux"
 target="${CARGO_TARGET_DIR:-$here/core/target}"
 
-cp "$root/ui.html" "$here/control/web/ui.html"
+cp "$root/ui.html" "$root/mini.html" "$here/control/web/"
 
 musl=x86_64-unknown-linux-musl
 (cd "$here/core" && cargo test --release --target-dir "$target" &&

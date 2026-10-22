@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GSB Proxy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* Tray preview: the small window shown next to the tray icon on Windows.
+     The full panel (ui.html) opens from the button at the bottom. */
+  :root{
+    --bg:#0b101c; --panel:rgba(255,255,255,.045); --border:rgba(255,255,255,.09); --border2:rgba(255,255,255,.06);
+    --fg:#eef2ff; --muted:#9aa6c4; --dim:#7c88a8;
+    --accent:#a78bfa; --accent2:#7c5cff; --green:#2ee59d; --green-soft:rgba(46,229,157,.12);
+    --red:#ff7a8a; --red-soft:rgba(255,122,138,.12); --warn:#f8c870;
+    --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--fg);font:13px/1.4 'Sora','Segoe UI',system-ui,sans-serif;overflow:hidden;user-select:none;
+    display:flex;flex-direction:column;border:1px solid var(--border)}
+  header{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
+  header h1{font-size:15px;font-weight:700;flex:1}
+  .pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid}
+  .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .pill.on{color:var(--green);background:var(--green-soft);border-color:rgba(46,229,157,.35)}
+  .pill.off{color:var(--red);background:var(--red-soft);border-color:rgba(255,122,138,.35)}
+  .x{width:26px;height:26px;border-radius:8px;border:0;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+  .x:hover{background:var(--panel);color:var(--fg)}
+  main{flex:1;display:flex;flex-direction:column;gap:10px;padding:0 16px 14px;min-height:0}
+  .proxy{padding:11px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--border2)}
+  .proxy .l{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim)}
+  .proxy .n{font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .proxy .a{font-family:var(--mono);font-size:11px;color:var(--accent);margin-top:2px}
+  .chart{border-radius:12px;background:var(--panel);border:1px solid var(--border2);padding:10px 12px}
+  .chart .top{display:flex;justify-content:space-between;align-items:baseline}
+  .chart .v{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--green)}
+  .chart .s{font-size:11px;color:var(--muted)}
+  .chart svg{display:block;width:100%;height:58px;margin-top:6px}
+  .chart path{vector-effect:non-scaling-stroke}
+  .toggles{border-radius:12px;background:var(--panel);border:1px solid var(--border2)}
+  .tg{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer}
+  .tg + .tg{border-top:1px solid var(--border2)}
+  .tg .t{flex:1}
+  .tg .t b{display:block;font-weight:600;font-size:12.5px}
+  .tg .t span{font-size:11px;color:var(--muted)}
+  .sw{width:38px;height:22px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;transition:background .2s;flex:none}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+  .tg[aria-checked="true"] .sw{background:var(--accent2)}
+  .tg[aria-checked="true"] .sw::after{transform:translateX(16px)}
+  .tg[aria-busy="true"]{opacity:.55;pointer-events:none}
+  .msg{font-size:11px;color:var(--warn);min-height:15px;margin-top:auto}
+  .open{height:40px;border-radius:12px;border:0;cursor:pointer;font:600 13px 'Sora','Segoe UI',sans-serif;color:#fff;
+    background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;gap:8px}
+  .open:hover{filter:brightness(1.08)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<header>
+  <h1>GSB Proxy</h1>
+  <span class="pill off" id="state">Kapalı</span>
+  <button class="x" onclick="hideWin()" aria-label="Kapat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+</header>
+<main>
+  <div class="proxy">
+    <div class="l">Proxy</div>
+    <div class="n" id="uni">—</div>
+    <div class="a" id="addr">—</div>
+  </div>
+  <div class="chart">
+    <div class="top"><span class="v" id="rate">0 KB/s</span><span class="s"><span id="conns">0</span> tünel · <span id="session">0 MB</span></span></div>
+    <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-label="Hız grafiği">
+      <defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ee59d" stop-opacity=".3"/><stop offset="1" stop-color="#2ee59d" stop-opacity="0"/></linearGradient></defs>
+      <path id="area" fill="url(#f)" d=""/>
+      <path id="line" stroke="#2ee59d" stroke-width="2" fill="none" stroke-linejoin="round" d=""/>
+    </svg>
+  </div>
+  <div class="toggles">
+    <div class="tg" id="tgTun" role="switch" tabindex="0" aria-checked="false" onclick="toggleTun()">
+      <div class="t"><b>Sanal Adaptör (TUN)</b><span id="tunSub">Tüm sistem trafiği</span></div><div class="sw"></div>
+    </div>
+    <div class="tg" id="tgSys" role="switch" tabindex="0" aria-checked="false" onclick="toggleSys()">
+      <div class="t"><b>Sistem Proxy</b><span>Tarayıcılar ve uygulamalar</span></div><div class="sw"></div>
+    </div>
+  </div>
+  <div class="msg" id="msg"></div>
+  <button class="open" onclick="openPanel()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
+    Detaylı Paneli Aç
+  </button>
+</main>
+<script>
+  // gsbHide / gsbOpenPanel are bound by the Go host (webview_windows.go); in a
+  // plain browser they are missing and the page still works.
+  const call = (name) => { try { if (window[name]) window[name](); } catch (e) {} };
+  function hideWin() { call('gsbHide'); }
+  function openPanel() { call('gsbOpenPanel'); }
+  window.addEventListener('blur', hideWin);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') hideWin();
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('tg')) { e.preventDefault(); e.target.click(); }
+  });
+
+  function fmtBytes(n) {
+    if (n < 1024) return n.toFixed(0) + ' B';
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+    return (n / 1073741824).toFixed(2) + ' GB';
+  }
+
+  let st = null, last = null;
+  const hist = [];
+  function draw() {
+    const W = 300, H = 60, n = 40, max = Math.max(1024, ...hist);
+    const off = n - hist.length;
+    const pts = hist.map((v, i) => `${i ? 'L' : 'M'}${(((off + i) / (n - 1)) * W).toFixed(1)} ${(H - 4 - (v / max) * (H - 8)).toFixed(1)}`).join('');
+    document.getElementById('line').setAttribute('d', pts);
+    document.getElementById('area').setAttribute('d', pts ? `${pts}L${W} ${H}L${((off / (n - 1)) * W).toFixed(1)} ${H}Z` : '');
+  }
+
+  async function poll() {
+    try {
+      st = await (await fetch('/api/status', { cache: 'no-store' })).json();
+    } catch (e) { return; }
+    const s = st.stats || {}, c = st.config || {}, tun = st.tun || {};
+    const on = tun.running || (st.sys_proxy && st.sys_proxy.enabled);
+    const pill = document.getElementById('state');
+    pill.className = 'pill ' + (on ? 'on' : 'off');
+    pill.textContent = tun.running ? 'TUN açık' : (on ? 'Proxy açık' : 'Kapalı');
+    document.getElementById('uni').textContent = c.active_proxy_uni || 'Proxy seçilmedi';
+    document.getElementById('addr').textContent = c.active_proxy_host ? `${c.active_proxy_host}:${c.active_proxy_port}` : '—';
+    const now = Date.now(), b = s.bytes_transferred || 0;
+    const rate = last && now > last.t ? Math.max(0, b - last.b) / ((now - last.t) / 1000) : 0;
+    last = { t: now, b };
+    hist.push(rate); if (hist.length > 40) hist.shift();
+    document.getElementById('rate').textContent = fmtBytes(rate) + '/s';
+    document.getElementById('conns').textContent = s.active_connections || 0;
+    document.getElementById('session').textContent = fmtBytes(b);
+    document.getElementById('tgTun').setAttribute('aria-checked', String(!!tun.running));
+    document.getElementById('tunSub').textContent = tun.running ? (tun.udp ? 'TCP + UDP tünelde' : 'TCP + DNS tünelde') : (st.is_admin ? 'Tüm sistem trafiği' : 'Yönetici izni ister');
+    document.getElementById('tgSys').setAttribute('aria-checked', String(!!(st.sys_proxy && st.sys_proxy.enabled)));
+    draw();
+  }
+
+  async function post(url, body) {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    return r.json().catch(() => ({}));
+  }
+  async function busy(id, fn) {
+    const el = document.getElementById(id);
+    el.setAttribute('aria-busy', 'true');
+    try { await fn(); } finally { el.removeAttribute('aria-busy'); poll(); }
+  }
+  function toggleTun() {
+    const msg = document.getElementById('msg');
+    busy('tgTun', async () => {
+      const running = st && st.tun && st.tun.running;
+      if (!running && st && !st.is_admin) {
+        msg.textContent = 'Yönetici izni isteniyor (UAC)...';
+        await post('/api/app/elevate');
+        return;
+      }
+      msg.textContent = running ? 'Sanal adaptör kapatılıyor...' : 'Sanal adaptör açılıyor...';
+      const d = await post('/api/tun/toggle', { enable: !running });
+      msg.textContent = d.ok ? '' : (d.error || 'İşlem başarısız');
+    });
+  }
+  function toggleSys() {
+    busy('tgSys', async () => {
+      const on = st && st.sys_proxy && st.sys_proxy.enabled;
+      await post('/api/sysproxy/toggle', { enable: !on });
+    });
+  }
+
+  poll();
+  setInterval(poll, 2000);
+</script>
+</body>
+</html>

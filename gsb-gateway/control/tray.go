@@ -7,7 +7,8 @@ import (
 )
 
 // runTray shows the system-tray icon and menu and blocks until the user quits.
-// Left-click opens the panel as an app window; right-click shows the menu.
+// Left-click opens the tray preview (Windows) or the panel (Linux);
+// right-click shows the menu.
 func runTray() {
 	systray.Run(onTrayReady, func() {})
 }
@@ -15,7 +16,7 @@ func runTray() {
 func onTrayReady() {
 	systray.SetIcon(trayIcon)
 	systray.SetTooltip("GSB Gateway")
-	systray.SetOnTapped(func() { openPanel() })
+	systray.SetOnTapped(func() { openTrayPopup() })
 
 	mOpen := systray.AddMenuItem("Paneli Aç", "Ayar penceresini aç")
 	systray.AddSeparator()

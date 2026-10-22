@@ -83,7 +83,9 @@ list into `gsb-gateway\control\embedded\`, generates the app icon, builds a sing
 ## Usage
 
 1. Run `GSB_Gateway.exe` — it lives in the system tray (shield icon). **Left-click**
-   opens the panel as an app window; **right-click** shows the menu.
+   opens a small preview flyout next to the tray (status, speed graph, TUN and
+   system-proxy switches); **Open detailed panel** there opens the full panel window.
+   **Right-click** shows the menu.
 2. Enter your university proxy username/password and pick a proxy, then **Save & Connect**.
 3. To route traffic choose **System Proxy** (browsers) or **Virtual Adapter / TUN**
    (whole system, incl. UDP via the relay). TUN needs administrator rights.
@@ -211,7 +213,8 @@ Bu komut; Rust çekirdeğini derler, onu + imzalı `wintun.dll`'i + proxy listes
 ### Kullanım
 
 1. `GSB_Gateway.exe`'yi çalıştırın — sistem tepsisinde (kalkan simgesi) durur. **Sol
-   tık** paneli uygulama penceresi olarak açar; **sağ tık** menü.
+   tık** tepsinin yanında küçük bir önizleme açar (durum, hız grafiği, TUN ve sistem
+   proxy anahtarları); oradaki **Detaylı Paneli Aç** geniş paneli açar. **Sağ tık** menü.
 2. Üniversite proxy kullanıcı adı/şifrenizi girip bir proxy seçin, **Kaydet ve Bağlan**.
 3. Trafiği yönlendirmek için **Sistem Proxy** (tarayıcılar) veya **Sanal Adaptör / TUN**
    (tüm sistem, UDP dâhil) seçin. TUN yönetici izni ister.

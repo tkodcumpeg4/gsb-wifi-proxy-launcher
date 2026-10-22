@@ -8,7 +8,9 @@ $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
 $dist = Join-Path $root 'dist'
 
-Copy-Item (Join-Path $root 'ui.html') (Join-Path $PSScriptRoot 'control\web\ui.html') -Force
+foreach ($f in 'ui.html', 'mini.html') {
+  Copy-Item (Join-Path $root $f) (Join-Path $PSScriptRoot "control\web\$f") -Force
+}
 
 Push-Location (Join-Path $PSScriptRoot 'core')
 cargo build --release
@@ -59,7 +61,7 @@ Copy-Item $wintun.FullName $dist -Force
 New-Item -ItemType Directory -Force (Join-Path $dist 'server') | Out-Null
 Copy-Item (Join-Path $PSScriptRoot 'relay\bin\gsb-relay-linux-amd64') (Join-Path $dist 'server\gsb-relay') -Force
 Copy-Item (Join-Path $PSScriptRoot 'relay\gsb-relay.service') (Join-Path $dist 'server') -Force
-foreach ($f in 'ui.html', 'list.txt', 'BeniOku.txt') {
+foreach ($f in 'ui.html', 'mini.html', 'list.txt', 'BeniOku.txt') {
   Copy-Item (Join-Path $root $f) $dist -Force
 }
 Write-Host "dist hazir: $dist"

@@ -3,28 +3,17 @@ package com.gsb.gateway
 import android.content.Context
 
 /**
- * Saved connection settings. Phase 0 keeps them in the app's private
- * SharedPreferences (readable only by this app, excluded from backups);
- * phase 2 moves the password into the Android Keystore.
+ * App-side settings. Proxy, credentials and relay live in the Go process's
+ * config.json (edited in the panel); only what the app itself needs is here.
  */
 class Prefs(ctx: Context) {
     private val sp = ctx.getSharedPreferences("gsb", Context.MODE_PRIVATE)
 
-    var host: String
-        get() = sp.getString("host", "") ?: ""
-        set(v) = sp.edit().putString("host", v).apply()
-    var port: Int
-        get() = sp.getInt("port", 8080)
-        set(v) = sp.edit().putInt("port", v).apply()
-    var username: String
-        get() = sp.getString("user", "") ?: ""
-        set(v) = sp.edit().putString("user", v).apply()
-    var password: String
-        get() = sp.getString("pass", "") ?: ""
-        set(v) = sp.edit().putString("pass", v).apply()
-    var udpgw: String
-        get() = sp.getString("udpgw", "") ?: ""
-        set(v) = sp.edit().putString("udpgw", v).apply()
+    /** Packages that bypass the VPN (bank apps and the like). */
+    var excluded: Set<String>
+        get() = sp.getStringSet("excluded", emptySet()) ?: emptySet()
+        set(v) = sp.edit().putStringSet("excluded", v).apply()
+
     var acceptedNotice: Boolean
         get() = sp.getBoolean("notice", false)
         set(v) = sp.edit().putBoolean("notice", v).apply()

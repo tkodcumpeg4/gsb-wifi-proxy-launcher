@@ -41,6 +41,11 @@
 
   .app{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:20px 22px 40px;display:flex;flex-direction:column;gap:18px}
 
+  /* Android app (WebView with window.GSB): the VPN replaces system proxy,
+     force-TUN, WireSock and Wi-Fi joining, so those controls go away. */
+  .android .desktop-only{display:none!important}
+  .android #btnSysProxy{display:none!important}
+
   /* own window frame (Windows app window; see frame_windows.go) */
   .titlebar,.rz{display:none}
   .framed .titlebar{display:flex;position:fixed;top:0;left:0;right:0;height:34px;z-index:60;align-items:stretch}
@@ -91,7 +96,7 @@
   .grid{display:flex;gap:16px;align-items:flex-start}
   .side{width:296px;flex:none;display:flex;flex-direction:column;gap:14px}
   .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
-  @media(max-width:880px){.grid{flex-direction:column}.side{width:100%}}
+  @media(max-width:880px){.grid{flex-direction:column;align-items:stretch}.side,.main{width:100%}}
 
   .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px}
   .card.pad-sm{padding:12px 14px}
@@ -279,11 +284,11 @@
           </button>
         </div>
         <span class="badge" id="tunBadge">TUN</span>
-        <div class="row" style="width:100%">
+        <div class="row desktop-only" style="width:100%">
           <span class="lab">Sistem Proxy</span>
           <span class="badge" id="sysProxyBadge">—</span>
         </div>
-        <button class="btn btn-sm" id="btnSysProxy" style="width:100%;justify-content:center" onclick="toggleSystemProxy()"><span id="btnSysProxyText">Sistem Proxy: Aç</span></button>
+        <button class="btn btn-sm desktop-only" id="btnSysProxy" style="width:100%;justify-content:center" onclick="toggleSystemProxy()"><span id="btnSysProxyText">Sistem Proxy: Aç</span></button>
       </div>
 
       <div class="card pad-sm tele" id="teleCard" role="button" tabindex="0" onclick="toggleTele()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTele()}" aria-expanded="false" title="Ayrıntılı metrikler için tıklayın">
@@ -377,12 +382,12 @@
           <div class="otext"><h4>Wi-Fi Adaptör Kilidi</h4><p>Trafiği doğrudan GSB Wi-Fi (<span class="mono" id="lblWifiIpInline">10.x.x.x</span>) üzerinden çıkarır.</p></div>
           <label class="sw"><input type="checkbox" id="chkBindWifi" onchange="onToggleWifiBind()"><span class="knob"></span></label>
         </div>
-        <div class="opt">
+        <div class="opt desktop-only">
           <span class="oico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 11 4.5-3 8-6 8-11V5z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></span>
           <div class="otext"><h4>Trafiği TUN'a Zorla</h4><p>Sanal adaptör açıkken Windows'un Wi-Fi'ye düşmesini engeller (Linux'ta gerekmez).</p></div>
           <label class="sw"><input type="checkbox" id="chkForceTun" onchange="onToggleForceTun()"><span class="knob"></span></label>
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+        <div class="desktop-only" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
           <button class="btn btn-sm" onclick="connectGsbWifi()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M12 20h.01"/></svg><span>GSBWIFI Bağlan</span></button>
           <button class="btn btn-sm" id="btnWireSock" onclick="toggleWireSock()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg><span id="btnWireSockText">WireSock: Başlat</span></button>
         </div>
@@ -444,15 +449,29 @@
     try {
       const res = await fetch('/api/status');
       const data = await res.json();
+      if (window.GSB) androidMerge(data);
       latestState = data;
       updateDashboard(data);
     } catch (e) { console.error('Status fetch error:', e); }
   }
 
-  // Show the purpose + disclaimer on every launch.
-  document.getElementById('introOverlay').classList.add('show');
+  // Show the purpose + disclaimer on every launch (the Android app shows it
+  // once, on its own start screen).
+  if (window.GSB) document.documentElement.classList.add('android');
+  else document.getElementById('introOverlay').classList.add('show');
+
+  // Android: the VPN belongs to the app; fold its state into the bridge's
+  // status so the dashboard renders it like the desktop TUN.
+  function androidMerge(data) {
+    try {
+      const v = JSON.parse(window.GSB.status());
+      data.tun = { running: v.running, starting: v.starting, udp: v.udp, last_error: v.error, adapter: 'VPN', tx_bytes: v.tx, rx_bytes: v.rx };
+      data.is_admin = true;
+    } catch (e) {}
+  }
 
   async function openExternal(url) {
+    if (window.GSB) { window.GSB.openUrl(url); return; }
     try {
       await fetch('/api/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
     } catch (e) { window.open(url, '_blank'); }
@@ -745,6 +764,13 @@
   async function toggleTun() {
     const logBox = document.getElementById('diagLogs');
     const running = latestState && latestState.tun && latestState.tun.running;
+    if (window.GSB) {
+      logBox.textContent = running ? '> VPN kapatılıyor...' : '> VPN açılıyor...';
+      const err = window.GSB.vpn(!running);
+      logBox.textContent = err ? '> Hata: ' + err : (running ? '> VPN kapatıldı.' : '> VPN açıldı: telefonun bütün trafiği köprüden geçiyor.');
+      setTimeout(fetchStatus, 1500);
+      return;
+    }
     if (!running && latestState && !latestState.is_admin) {
       if (!confirm('Sanal ağ bağdaştırıcısı yönetici yetkisi ister. GSB Proxy yönetici olarak yeniden başlatılsın mı?')) return;
       logBox.textContent = '> Yönetici olarak yeniden başlatılıyor (UAC onayı bekleniyor)...';

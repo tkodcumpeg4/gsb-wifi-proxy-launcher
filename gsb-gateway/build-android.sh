@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Builds the Android APK: the Rust core (core-mobile) for arm64 and x86_64
-# with the NDK's clang as linker, then the app with Gradle. Output:
+# Builds the Android APK for arm64 and x86_64: the Rust core (core-mobile,
+# a JNI library) and the Go bridge/panel (control, run by the app as a child
+# process and shipped as libgsbgateway.so so Android extracts it executable),
+# both with the NDK's clang, then the app with Gradle. Output:
 # ../GSB_Gateway-android.apk. Needs ANDROID_HOME (SDK with ndk;28.2.13676358),
 # JAVA_HOME (JDK 17–21) and `rustup target add aarch64-linux-android x86_64-linux-android`.
 #   bash gsb-gateway/build-android.sh
@@ -19,7 +21,9 @@ esac
 bin="$ndk/toolchains/llvm/prebuilt/$host/bin"
 jni="$here/mobile/android/app/src/main/jniLibs"
 
-build() { # <rust target> <android abi> <clang prefix>
+cp "$root/ui.html" "$root/mini.html" "$here/control/web/"
+
+build() { # <rust target> <android abi> <clang prefix> <goarch>
   local env_target
   env_target="$(echo "$1" | tr 'a-z-' 'A-Z_')"
   export "CARGO_TARGET_${env_target}_LINKER=$bin/$3$api-clang$ext"
@@ -28,9 +32,11 @@ build() { # <rust target> <android abi> <clang prefix>
   (cd "$here/core-mobile" && cargo build --release --target "$1")
   mkdir -p "$jni/$2"
   cp "$here/core-mobile/target/$1/release/libgsbcore.so" "$jni/$2/"
+  # cgo so Go resolves names through bionic (Android has no /etc/resolv.conf).
+  (cd "$here/control" && GOOS=android GOARCH="$4" CGO_ENABLED=1 CC="$bin/$3$api-clang$ext"     go build -trimpath -ldflags '-s -w' -o "$jni/$2/libgsbgateway.so" .)
 }
-build aarch64-linux-android arm64-v8a aarch64-linux-android
-build x86_64-linux-android x86_64 x86_64-linux-android
+build aarch64-linux-android arm64-v8a aarch64-linux-android arm64
+build x86_64-linux-android x86_64 x86_64-linux-android amd64
 
 cd "$here/mobile/android"
 if [ "$host" = windows-x86_64 ]; then ./gradlew.bat --no-daemon assembleRelease; else ./gradlew --no-daemon assembleRelease; fi

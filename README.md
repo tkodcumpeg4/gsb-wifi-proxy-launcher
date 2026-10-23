@@ -126,6 +126,20 @@ rustup target add x86_64-unknown-linux-musl
 bash gsb-gateway/build-linux.sh   # -> dist-linux/ + GSB_Gateway-linux-amd64.tar.gz
 ```
 
+## Android (beta)
+
+The Android app (`gsb-gateway/mobile/android`) runs the same Go bridge and panel
+as a child process and the Rust core (`gsb-gateway/core-mobile`) on the TUN that
+`VpnService` provides, so WARP-Shield, TLS masking, the proxy list and the UDP relay
+work as on the desktop. The home screen is the tray preview page; "Detaylı Paneli
+Aç" opens the full panel. It adds a live-speed notification, a Quick Settings tile,
+Always-on VPN support and per-app exclusion. Passwords are encrypted with a key
+wrapped by the Android Keystore. Turn Android's Private DNS to "Automatic" or "Off":
+the proxy only allows port 443, so strict DNS-over-TLS cannot work.
+
+Build with the Android SDK (platform 36, NDK 28.2), JDK 17–21, Go and Rust with the
+Android targets: `bash gsb-gateway/build-android.sh` → `GSB_Gateway-android.apk`.
+
 ## UDP relay (optional)
 
 To carry UDP (voice, games, QUIC), run `gsb-relay` on a Linux server you control; it
@@ -238,6 +252,14 @@ tar xzf GSB_Gateway-linux-amd64.tar.gz && cd GSB_Gateway && ./install.sh
 - Şifreler `~/.config/gsb-gateway/secret.key` ile AES-GCM şifrelenir (DPAPI kadar
   güçlü değildir). **Trafiği TUN'a Zorla** ve WireSock yalnızca Windows içindir.
 - Derleme: `bash gsb-gateway/build-linux.sh` (Go, Rust, musl hedefi ve `musl-tools`).
+
+### Android (beta)
+
+Android uygulaması (`gsb-gateway/mobile/android`) masaüstündeki Go köprüsünü ve
+paneli aynen çalıştırır; trafik Android'in VPN arayüzünden Rust çekirdeğe gider.
+Ana ekran tepsi önizlemesi, "Detaylı Paneli Aç" tam paneldir. Bildirimde canlı hız,
+Hızlı Ayarlar kutucuğu, her zaman açık VPN ve uygulama hariç tutma vardır. Android'in
+"Özel DNS" ayarını "Otomatik" ya da "Kapalı" yapın. Derleme: `bash gsb-gateway/build-android.sh`.
 
 ### UDP rölesi (isteğe bağlı)
 

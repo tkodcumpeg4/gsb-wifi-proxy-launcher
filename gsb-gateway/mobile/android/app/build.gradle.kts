@@ -11,9 +11,10 @@ android {
         applicationId = "com.gsb.gateway"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-faz0"
-        // libgsbcore.so is built by ../../build-android.sh (cargo-ndk) into src/main/jniLibs.
+        versionCode = 2
+        versionName = "0.2.0"
+        // libgsbcore.so (Rust core) and libgsbgateway.so (Go bridge, an executable)
+        // are built by ../../build-android.sh into src/main/jniLibs.
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
 
@@ -30,7 +31,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     packaging {
-        jniLibs { useLegacyPackaging = false }
+        // Extract native libs to disk: libgsbgateway.so is run as a process.
+        jniLibs { useLegacyPackaging = true }
     }
 }
 

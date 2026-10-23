@@ -54,6 +54,20 @@
   .open{height:40px;border-radius:12px;border:0;cursor:pointer;font:600 13px 'Sora','Segoe UI',sans-serif;color:#fff;
     background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;gap:8px}
   .open:hover{filter:brightness(1.08)}
+  /* Android app: full-screen home page instead of a tray flyout */
+  .android body{border:0}
+  .android .x,.android #tgSys{display:none}
+  .android main{padding-bottom:max(14px,env(safe-area-inset-bottom))}
+  .tg .count{font:600 12px var(--mono);color:var(--muted)}
+  .sheet{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;z-index:5}
+  .sheet[hidden]{display:none}
+  .sheet header{border-bottom:1px solid var(--border2)}
+  .sheet .list{flex:1;overflow:auto;padding:4px 16px 16px}
+  .sheet .app{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border2);cursor:pointer}
+  .sheet .app .t{flex:1;min-width:0}
+  .sheet .app b{display:block;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sheet .app span{font:11px var(--mono);color:var(--dim)}
+  .sheet input[type=search]{margin:10px 16px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--fg);padding:0 12px;font:13px inherit}
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
@@ -84,6 +98,9 @@
     <div class="tg" id="tgSys" role="switch" tabindex="0" aria-checked="false" onclick="toggleSys()">
       <div class="t"><b>Sistem Proxy</b><span>Tarayıcılar ve uygulamalar</span></div><div class="sw"></div>
     </div>
+    <div class="tg" id="tgApps" role="button" tabindex="0" onclick="openApps()" hidden>
+      <div class="t"><b>Tünel dışı uygulamalar</b><span>Seçilenler VPN'e girmez (ör. bankacılık)</span></div><span class="count" id="appsCount">0</span>
+    </div>
   </div>
   <div class="msg" id="msg"></div>
   <button class="open" onclick="openPanel()">
@@ -91,12 +108,22 @@
     Detaylı Paneli Aç
   </button>
 </main>
+<div class="sheet" id="appsSheet" hidden>
+  <header><h1>Tünel dışı uygulamalar</h1><button class="x" style="display:grid" onclick="closeApps()" aria-label="Kapat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></header>
+  <input type="search" id="appsFilter" placeholder="Uygulama ara" oninput="renderApps()" aria-label="Uygulama ara">
+  <div class="list" id="appsList"></div>
+</div>
 <script>
   // gsbHide / gsbOpenPanel are bound by the Go host (webview_windows.go); in a
   // plain browser they are missing and the page still works.
   const call = (name) => { try { if (window[name]) window[name](); } catch (e) {} };
+  const android = !!window.GSB; // the Android app's bridge (MainActivity.kt)
+  if (android) {
+    document.documentElement.classList.add('android');
+    document.getElementById('tgApps').hidden = false;
+  }
   function hideWin() { call('gsbHide'); }
-  function openPanel() { call('gsbOpenPanel'); }
+  function openPanel() { if (android) window.GSB.openPanel(); else call('gsbOpenPanel'); }
   window.addEventListener('blur', hideWin);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') hideWin();
@@ -124,6 +151,13 @@
     try {
       st = await (await fetch('/api/status', { cache: 'no-store' })).json();
     } catch (e) { return; }
+    if (android) {
+      try {
+        const v = JSON.parse(window.GSB.status());
+        st.tun = { running: v.running, udp: v.udp };
+        st.android = v;
+      } catch (e) {}
+    }
     const s = st.stats || {}, c = st.config || {}, tun = st.tun || {};
     const on = tun.running || (st.sys_proxy && st.sys_proxy.enabled);
     const pill = document.getElementById('state');
@@ -139,7 +173,15 @@
     document.getElementById('conns').textContent = s.active_connections || 0;
     document.getElementById('session').textContent = fmtBytes(b);
     document.getElementById('tgTun').setAttribute('aria-checked', String(!!tun.running));
-    document.getElementById('tunSub').textContent = tun.running ? (tun.udp ? 'TCP + UDP tünelde' : 'TCP + DNS tünelde') : (st.is_admin ? 'Tüm sistem trafiği' : 'Yönetici izni ister');
+    document.getElementById('tunSub').textContent = tun.running ? (tun.udp ? 'TCP + UDP tünelde' : 'TCP + DNS tünelde') : (android ? 'Telefonun bütün trafiği' : st.is_admin ? 'Tüm sistem trafiği' : 'Yönetici izni ister');
+    if (android) {
+      const a = st.android || {};
+      document.getElementById('appsCount').textContent = a.excluded || 0;
+      const msg = document.getElementById('msg');
+      if (a.error) msg.textContent = a.error;
+      else if (a.private_dns_strict) msg.textContent = "Özel DNS (DoT) açık: proxy 853'e izin vermediği için DNS çalışmaz. Ayarlar > Ağ > Özel DNS'i 'Otomatik' yapın.";
+      else if (!busyNow) msg.textContent = '';
+    }
     document.getElementById('tgSys').setAttribute('aria-checked', String(!!(st.sys_proxy && st.sys_proxy.enabled)));
     draw();
   }
@@ -148,15 +190,23 @@
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
     return r.json().catch(() => ({}));
   }
+  let busyNow = false;
   async function busy(id, fn) {
     const el = document.getElementById(id);
     el.setAttribute('aria-busy', 'true');
-    try { await fn(); } finally { el.removeAttribute('aria-busy'); poll(); }
+    busyNow = true;
+    try { await fn(); } finally { busyNow = false; el.removeAttribute('aria-busy'); setTimeout(poll, 800); }
   }
   function toggleTun() {
     const msg = document.getElementById('msg');
     busy('tgTun', async () => {
       const running = st && st.tun && st.tun.running;
+      if (android) {
+        msg.textContent = running ? 'VPN kapatılıyor...' : 'VPN açılıyor...';
+        const err = window.GSB.vpn(!running);
+        msg.textContent = err || '';
+        return;
+      }
       if (!running && st && !st.is_admin) {
         msg.textContent = 'Yönetici izni isteniyor (UAC)...';
         await post('/api/app/elevate');
@@ -171,6 +221,45 @@
     busy('tgSys', async () => {
       const on = st && st.sys_proxy && st.sys_proxy.enabled;
       await post('/api/sysproxy/toggle', { enable: !on });
+    });
+  }
+
+  // Android: apps that bypass the VPN.
+  let apps = [];
+  function openApps() {
+    try { apps = JSON.parse(window.GSB.apps()); } catch (e) { apps = []; }
+    document.getElementById('appsSheet').hidden = false;
+    renderApps();
+  }
+  function closeApps() { document.getElementById('appsSheet').hidden = true; poll(); }
+  // Android back button: close the app list first (MainActivity asks this).
+  window.gsbBack = () => {
+    if (!document.getElementById('appsSheet').hidden) { closeApps(); return true; }
+    return false;
+  };
+  function renderApps() {
+    const q = document.getElementById('appsFilter').value.toLowerCase();
+    const list = document.getElementById('appsList');
+    list.textContent = '';
+    apps.filter(a => !q || a.label.toLowerCase().includes(q) || a.pkg.includes(q)).forEach(a => {
+      const row = document.createElement('div');
+      row.className = 'tg app';
+      row.setAttribute('role', 'switch');
+      row.tabIndex = 0;
+      row.setAttribute('aria-checked', String(a.excluded));
+      const t = document.createElement('div');
+      t.className = 't';
+      const b = document.createElement('b'); b.textContent = a.label;
+      const s = document.createElement('span'); s.textContent = a.pkg;
+      t.append(b, s);
+      const sw = document.createElement('div'); sw.className = 'sw';
+      row.append(t, sw);
+      row.onclick = () => {
+        a.excluded = !a.excluded;
+        window.GSB.setExcluded(a.pkg, a.excluded);
+        row.setAttribute('aria-checked', String(a.excluded));
+      };
+      list.append(row);
     });
   }
 

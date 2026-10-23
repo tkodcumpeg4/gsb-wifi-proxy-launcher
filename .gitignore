@@ -25,3 +25,5 @@ Thumbs.db
 
 # Keep the committed empty placeholder (build.ps1 fills it locally)
 !gsb-gateway/control/embedded/gsb-core.exe
+gsb-gateway/core-mobile/target/
+*.apk

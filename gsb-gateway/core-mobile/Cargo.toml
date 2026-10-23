@@ -1,0 +1,25 @@
+[package]
+name = "gsb-core-mobile"
+version = "0.1.0"
+edition = "2021"
+description = "GSB Gateway data plane for Android: runs tun2proxy on the TUN fd that VpnService hands over"
+
+[lib]
+name = "gsbcore"
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+tun2proxy = { version = "=0.8.5", default-features = false, features = ["udpgw"] }
+tokio = { version = "1", features = ["rt-multi-thread"] }
+log = "0.4"
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = { version = "0.22.4", default-features = false }
+android_logger = "0.15.1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

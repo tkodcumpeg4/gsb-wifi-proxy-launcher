@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GSB Gateway</title>
+<style>
+  /* Phase 0 screen of the Android app; same palette as the desktop panel
+     (ui.html / mini.html). No web fonts: the app itself is outside the VPN,
+     so on GSB Wi-Fi nothing external would load. */
+  :root{
+    --bg:#080b14; --panel:rgba(255,255,255,.045); --border:rgba(255,255,255,.09); --border2:rgba(255,255,255,.06);
+    --fg:#eef2ff; --muted:#9aa6c4; --dim:#7c88a8;
+    --accent:#a78bfa; --accent2:#7c5cff; --green:#2ee59d; --green-soft:rgba(46,229,157,.12);
+    --red:#ff7a8a; --red-soft:rgba(255,122,138,.12); --warn:#f8c870; --warn-soft:rgba(248,200,112,.1);
+    --mono:ui-monospace,'Roboto Mono','DejaVu Sans Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,Roboto,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent;
+    padding:max(18px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+  main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  header h1{font-size:20px;font-weight:700}
+  .pill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid}
+  .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .pill.on{color:var(--green);background:var(--green-soft);border-color:rgba(46,229,157,.35)}
+  .pill.off{color:var(--red);background:var(--red-soft);border-color:rgba(255,122,138,.35)}
+  .pill.wait{color:var(--warn);background:var(--warn-soft);border-color:rgba(248,200,112,.35)}
+
+  .power{display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 0 8px}
+  .power button{width:150px;height:150px;border-radius:50%;border:2px solid var(--border);background:radial-gradient(circle at 50% 40%,rgba(124,92,255,.25),rgba(255,255,255,.03));
+    color:var(--fg);display:grid;place-items:center;font:600 15px system-ui,Roboto,sans-serif;transition:border-color .2s,box-shadow .2s}
+  .power button svg{width:44px;height:44px;margin-bottom:4px}
+  .power button.on{border-color:var(--green);box-shadow:0 0 0 8px rgba(46,229,157,.08),0 0 40px rgba(46,229,157,.25)}
+  .power button:active{transform:scale(.98)}
+  .power .sub{font-size:13px;color:var(--muted);text-align:center;min-height:19px}
+
+  .card{background:var(--panel);border:1px solid var(--border2);border-radius:16px;padding:14px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .stats div{text-align:center}
+  .stats b{display:block;font:600 16px var(--mono)}
+  .stats span{font-size:11px;color:var(--muted)}
+  .rate b{color:var(--green)}
+
+  form{display:flex;flex-direction:column;gap:12px}
+  label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+  label .hint{color:var(--accent)}
+  input{height:46px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--fg);padding:0 14px;font:15px system-ui,Roboto,sans-serif;outline:none}
+  input.mono{font-family:var(--mono)}
+  input:focus{border-color:var(--accent)}
+  details summary{font-size:13px;color:var(--muted);cursor:pointer;padding:4px 0}
+  details[open] summary{margin-bottom:10px}
+  .err{font-size:13px;color:var(--red);min-height:18px}
+  .note{font-size:12px;color:var(--dim);line-height:1.5}
+
+  .notice{position:fixed;inset:0;background:rgba(2,4,10,.8);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9}
+  .notice[hidden]{display:none}
+  .notice .box{max-width:460px;background:#0d1322;border:1px solid var(--border);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px}
+  .notice h2{font-size:18px}
+  .notice p{font-size:14px;color:#cfd7f2;line-height:1.55}
+  .notice .disc{font-size:12.5px;color:var(--muted);padding:12px;border-radius:12px;background:var(--warn-soft);border:1px solid rgba(248,200,112,.3)}
+  .btn{height:46px;border-radius:12px;border:0;font:600 15px system-ui,Roboto,sans-serif;color:#fff;background:linear-gradient(135deg,var(--accent2),var(--accent))}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>GSB Gateway</h1>
+    <span class="pill off" id="state">Kapalı</span>
+  </header>
+
+  <section class="power">
+    <button id="power" type="button" aria-label="Bağlan">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.4 7.2a8 8 0 1 0 11.2 0"/></svg><br><span id="powerText">Bağlan</span></span>
+    </button>
+    <div class="sub" id="sub">Telefonun bütün trafiği üniversite proxy'sinden geçer.</div>
+  </section>
+
+  <section class="card stats" aria-label="Trafik">
+    <div class="rate"><b id="rate">0 KB/s</b><span>anlık</span></div>
+    <div><b id="down">0 MB</b><span>indirilen</span></div>
+    <div><b id="up">0 MB</b><span>gönderilen</span></div>
+  </section>
+
+  <section class="card">
+    <form id="form" autocomplete="off">
+      <label for="hostPort">Proxy adresi (IP:Port)
+        <input class="mono" id="hostPort" inputmode="url" placeholder="193.140.97.32:8080" required>
+      </label>
+      <label for="user">Kullanıcı adı
+        <input id="user" placeholder="Üniversite kullanıcı adın" autocapitalize="off">
+      </label>
+      <label for="pass"><span>Parola <span class="hint" id="passHint"></span></span>
+        <input id="pass" type="password" placeholder="Parola">
+      </label>
+      <details>
+        <summary>UDP rölesi (isteğe bağlı)</summary>
+        <label for="udpgw">Röle adresi (IP:Port), boş bırakılırsa UDP kapalı
+          <input class="mono" id="udpgw" placeholder="203.0.113.10:443">
+        </label>
+      </details>
+      <div class="err" id="err" role="alert"></div>
+      <p class="note">Aşama 0 sürümü: proxy'ye doğrudan bağlanır. WARP-Shield, TLS maskeleme ve proxy listesi sonraki sürümde gelecek.</p>
+    </form>
+  </section>
+</main>
+
+<div class="notice" id="notice" hidden>
+  <div class="box">
+    <h2>GSB Gateway</h2>
+    <p>Bu uygulama, GSB/KYK Wi-Fi ağında telefonun bütün trafiğini <b>kendi</b> üniversite proxy hesabınla bir VPN tüneli üzerinden geçirir.</p>
+    <div class="disc"><b>Sorumluluk reddi.</b> Ağ filtrelerini atlatmak veya proxy'nin taşımadığı UDP trafiğini harici bir röleyle tünellemek kurumun ağ kullanım politikasına aykırı olabilir ve disiplin sonuçları doğurabilir. Kullanım tamamen senin sorumluluğundadır; başkasına ait hesapları kapsamaz.</div>
+    <button class="btn" id="noticeOk" type="button">Anladım, devam et</button>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const bridge = window.GSB; // added by MainActivity; missing in a desktop browser
+  let st = { running: false };
+  let last = null;
+
+  function fmt(n) {
+    if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+    return (n / 1073741824).toFixed(2) + ' GB';
+  }
+
+  function loadSettings() {
+    if (!bridge) return;
+    const s = JSON.parse(bridge.settings());
+    if (s.host) $('hostPort').value = `${s.host}:${s.port}`;
+    $('user').value = s.username || '';
+    $('udpgw').value = s.udpgw || '';
+    $('passHint').textContent = s.has_password ? '(kayıtlı, değiştirmek için yaz)' : '';
+    $('notice').hidden = !!s.notice;
+  }
+
+  function render() {
+    const on = st.running, wait = st.starting;
+    const pill = $('state');
+    pill.className = 'pill ' + (on ? 'on' : wait ? 'wait' : 'off');
+    pill.textContent = on ? 'Bağlı' : wait ? 'Bağlanıyor' : 'Kapalı';
+    $('power').classList.toggle('on', on);
+    $('powerText').textContent = on ? 'Bağlantıyı kes' : 'Bağlan';
+    $('power').setAttribute('aria-label', on ? 'Bağlantıyı kes' : 'Bağlan');
+    $('sub').textContent = on ? `${st.proxy} üzerinden bağlı` : 'Telefonun bütün trafiği üniversite proxy\'sinden geçer.';
+    if (st.error) $('err').textContent = st.error;
+    $('down').textContent = fmt(st.rx || 0);
+    $('up').textContent = fmt(st.tx || 0);
+    const now = Date.now(), total = (st.rx || 0) + (st.tx || 0);
+    const rate = last && on && now > last.t ? Math.max(0, total - last.b) / ((now - last.t) / 1000) : 0;
+    last = { t: now, b: total };
+    $('rate').textContent = fmt(rate) + '/s';
+  }
+
+  function poll() {
+    if (!bridge) return;
+    try { st = JSON.parse(bridge.status()); } catch (e) { return; }
+    render();
+  }
+
+  $('power').addEventListener('click', () => {
+    $('err').textContent = '';
+    if (!bridge) { $('err').textContent = 'Bu sayfa yalnızca uygulamanın içinde çalışır.'; return; }
+    if (st.running || st.starting) { bridge.disconnect(); return; }
+    const msg = bridge.connect($('hostPort').value, $('user').value, $('pass').value, $('udpgw').value);
+    if (msg) { $('err').textContent = msg; return; }
+    $('pass').value = '';
+    $('passHint').textContent = '(kayıtlı, değiştirmek için yaz)';
+  });
+  $('form').addEventListener('submit', e => { e.preventDefault(); $('power').click(); });
+  $('noticeOk').addEventListener('click', () => { $('notice').hidden = true; if (bridge) bridge.acceptNotice(); });
+
+  loadSettings();
+  poll();
+  setInterval(poll, 1000);
+</script>
+</body>
+</html>

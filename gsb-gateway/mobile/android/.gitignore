@@ -1,0 +1,8 @@
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+# built by ../../build-android.sh
+app/src/main/jniLibs/

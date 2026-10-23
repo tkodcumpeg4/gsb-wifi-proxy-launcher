@@ -11,8 +11,8 @@ android {
         applicationId = "com.gsb.gateway"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
         // libgsbcore.so (Rust core) and libgsbgateway.so (Go bridge, an executable)
         // are built by ../../build-android.sh into src/main/jniLibs.
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }

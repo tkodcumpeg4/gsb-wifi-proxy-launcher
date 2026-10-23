@@ -67,6 +67,15 @@
   .sheet .app .t{flex:1;min-width:0}
   .sheet .app b{display:block;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sheet .app span{font:11px var(--mono);color:var(--dim)}
+  .scan{display:flex;flex-direction:column;gap:12px;padding:12px 16px 16px;overflow:auto;flex:1}
+  .scan>*{flex:none}
+  .scan video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;background:#000;border:1px solid var(--border)}
+  .scan textarea,.scan input{width:100%;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--fg);padding:10px 12px;font:13px var(--mono)}
+  .scan textarea{height:70px;resize:none}
+  .scan input{height:46px;font-size:22px;letter-spacing:.3em;text-align:center}
+  .scan .hint{font-size:12px;color:var(--muted)}
+  .scan .ok{color:var(--green);font-size:13px}
+  .scan .bad{color:var(--red);font-size:13px}
   .sheet input[type=search]{margin:10px 16px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--fg);padding:0 12px;font:13px inherit}
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
@@ -98,6 +107,9 @@
     <div class="tg" id="tgSys" role="switch" tabindex="0" aria-checked="false" onclick="toggleSys()">
       <div class="t"><b>Sistem Proxy</b><span>Tarayıcılar ve uygulamalar</span></div><div class="sw"></div>
     </div>
+    <div class="tg" id="tgImport" role="button" tabindex="0" onclick="openImport()" hidden>
+      <div class="t"><b>Bilgisayardan aktar</b><span>Masaüstündeki "Telefona Aktar" QR kodunu okut</span></div><span class="count">QR</span>
+    </div>
     <div class="tg" id="tgApps" role="button" tabindex="0" onclick="openApps()" hidden>
       <div class="t"><b>Tünel dışı uygulamalar</b><span>Seçilenler VPN'e girmez (ör. bankacılık)</span></div><span class="count" id="appsCount">0</span>
     </div>
@@ -108,6 +120,20 @@
     Detaylı Paneli Aç
   </button>
 </main>
+<div class="sheet" id="importSheet" hidden>
+  <header><h1>Bilgisayardan aktar</h1><button class="x" style="display:grid" onclick="closeImport()" aria-label="Kapat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></header>
+  <div class="scan">
+    <div class="hint">Bilgisayarda panelin üstündeki <b>Telefona Aktar</b>'a tıkla ve çıkan QR kodu kameraya göster.</div>
+    <video id="scanVideo" playsinline muted></video>
+    <div class="hint" id="scanState">Kamera açılıyor…</div>
+    <label class="hint" for="scanCode">Kamera çalışmazsa bilgisayardaki "Kodu kopyala" ile aldığın kodu buraya yapıştır:</label>
+    <textarea id="scanCode" placeholder="GSB1.…" spellcheck="false"></textarea>
+    <label class="hint" for="scanPin">Bilgisayarda görünen PIN</label>
+    <input id="scanPin" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+    <button class="open" onclick="doImport()" id="scanGo">Ayarları aktar</button>
+    <div id="scanResult" role="status"></div>
+  </div>
+</div>
 <div class="sheet" id="appsSheet" hidden>
   <header><h1>Tünel dışı uygulamalar</h1><button class="x" style="display:grid" onclick="closeApps()" aria-label="Kapat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></header>
   <input type="search" id="appsFilter" placeholder="Uygulama ara" oninput="renderApps()" aria-label="Uygulama ara">
@@ -121,6 +147,7 @@
   if (android) {
     document.documentElement.classList.add('android');
     document.getElementById('tgApps').hidden = false;
+    document.getElementById('tgImport').hidden = false;
   }
   function hideWin() { call('gsbHide'); }
   function openPanel() { if (android) window.GSB.openPanel(); else call('gsbOpenPanel'); }
@@ -232,8 +259,73 @@
     renderApps();
   }
   function closeApps() { document.getElementById('appsSheet').hidden = true; poll(); }
-  // Android back button: close the app list first (MainActivity asks this).
+  // Settings import: scan the desktop's transfer QR (jsQR, served by the bridge).
+  let scanStream = null, scanLoop = 0;
+  function loadJsQR() {
+    return window.jsQR ? Promise.resolve() : new Promise((ok, fail) => {
+      const s = document.createElement('script'); s.src = '/jsqr.js'; s.onload = ok; s.onerror = fail; document.head.append(s);
+    });
+  }
+  async function openImport() {
+    document.getElementById('importSheet').hidden = false;
+    document.getElementById('scanResult').textContent = '';
+    const state = document.getElementById('scanState');
+    try {
+      await loadJsQR();
+      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const v = document.getElementById('scanVideo');
+      v.srcObject = scanStream;
+      await v.play();
+      state.textContent = 'QR kodu çerçeveye getir.';
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const step = () => {
+        if (!scanStream) return;
+        if (v.videoWidth) {
+          canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+          ctx.drawImage(v, 0, 0);
+          const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const hit = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+          if (hit && hit.data.startsWith('GSB1.')) {
+            document.getElementById('scanCode').value = hit.data;
+            state.textContent = 'QR okundu. Şimdi PIN\'i gir.';
+            stopScan();
+            document.getElementById('scanPin').focus();
+            return;
+          }
+        }
+        scanLoop = requestAnimationFrame(step);
+      };
+      step();
+    } catch (e) {
+      state.textContent = 'Kamera açılamadı; kodu aşağıya yapıştırabilirsin.';
+    }
+  }
+  function stopScan() {
+    cancelAnimationFrame(scanLoop);
+    if (scanStream) scanStream.getTracks().forEach(t => t.stop());
+    scanStream = null;
+  }
+  function closeImport() { stopScan(); document.getElementById('importSheet').hidden = true; poll(); }
+  async function doImport() {
+    const out = document.getElementById('scanResult');
+    const btn = document.getElementById('scanGo');
+    out.className = 'hint'; out.textContent = 'Çözülüyor…';
+    btn.disabled = true;
+    try {
+      const d = await post('/api/transfer/import', { code: document.getElementById('scanCode').value, pin: document.getElementById('scanPin').value });
+      if (d.ok) {
+        out.className = 'ok';
+        out.textContent = `Aktarıldı: ${d.uni} (${d.proxy})${d.relay ? ' + UDP rölesi' : ''}. Artık bağlanabilirsin.`;
+        document.getElementById('scanPin').value = '';
+        document.getElementById('scanCode').value = '';
+      } else { out.className = 'bad'; out.textContent = d.error || 'Aktarılamadı'; }
+    } finally { btn.disabled = false; }
+  }
+
+  // Android back button: close an open sheet first (MainActivity asks this).
   window.gsbBack = () => {
+    if (!document.getElementById('importSheet').hidden) { closeImport(); return true; }
     if (!document.getElementById('appsSheet').hidden) { closeApps(); return true; }
     return false;
   };

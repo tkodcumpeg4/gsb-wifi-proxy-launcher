@@ -11,6 +11,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.WindowInsets
 import android.webkit.JavascriptInterface
+import android.webkit.PermissionRequest
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -28,6 +30,7 @@ class MainActivity : Activity() {
 
     private lateinit var web: WebView
     private lateinit var prefs: Prefs
+    private var pendingCamera: PermissionRequest? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +47,21 @@ class MainActivity : Activity() {
                     if (url.startsWith(Gateway.PANEL) || url.startsWith("file:///android_asset/")) return false
                     openExternal(url)
                     return true
+                }
+            }
+            // Camera for the transfer QR scanner (mini.html): only our own
+            // pages may ask, and only for video.
+            webChromeClient = object : WebChromeClient() {
+                override fun onPermissionRequest(request: PermissionRequest) {
+                    val video = PermissionRequest.RESOURCE_VIDEO_CAPTURE
+                    if (!request.origin.toString().startsWith(Gateway.PANEL) || video !in request.resources) {
+                        request.deny()
+                    } else if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        request.grant(arrayOf(video))
+                    } else {
+                        pendingCamera = request
+                        requestPermissions(arrayOf(Manifest.permission.CAMERA), REQ_CAMERA)
+                    }
                 }
             }
             addJavascriptInterface(Bridge(), "GSB")
@@ -87,6 +105,19 @@ class MainActivity : Activity() {
         web.evaluateJavascript("window.gsbBack ? gsbBack() : false") { handled ->
             @Suppress("DEPRECATION")
             if (handled != "true") super.onBackPressed()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_CAMERA) {
+            val req = pendingCamera ?: return
+            pendingCamera = null
+            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+                req.grant(arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE))
+            } else {
+                req.deny()
+            }
         }
     }
 
@@ -203,5 +234,6 @@ class MainActivity : Activity() {
     companion object {
         private const val REQ_VPN = 1
         private const val REQ_NOTIFY = 2
+        private const val REQ_CAMERA = 3
     }
 }
